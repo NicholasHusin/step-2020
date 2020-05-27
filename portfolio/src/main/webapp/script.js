@@ -26,3 +26,13 @@ function openNewTab(url) {
 function playVideo(id) {
     openNewTab('https://www.youtube.com/embed/' + id);
 }
+
+/**
+* Randomly clicks a link that has the given class name.
+**/
+function clickRandomLink(className) {
+  var links = document.getElementsByClassName(className);
+  var randomLink = links[Math.floor(Math.random() * links.length)];
+
+  randomLink.click();
+}
