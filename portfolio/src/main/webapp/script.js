@@ -13,16 +13,16 @@
 // limitations under the License.
 
 /**
- * Adds a random greeting to the page.
- */
-function addRandomGreeting() {
-  const greetings =
-      ['Hello world!', '¡Hola Mundo!', '你好，世界！', 'Bonjour le monde!'];
+* Opens url in new tab.
+**/
+function openNewTab(url) {
+    window.open(url);
+}
 
-  // Pick a random greeting.
-  const greeting = greetings[Math.floor(Math.random() * greetings.length)];
-
-  // Add it to the page.
-  const greetingContainer = document.getElementById('greeting-container');
-  greetingContainer.innerText = greeting;
+/**
+* Opens a YouTube video in a new tab given its id.
+* Uses /embed/ path so the video is opened in full screen.
+**/
+function playVideo(id) {
+    openNewTab('https://www.youtube.com/embed/' + id);
 }
