@@ -1,9 +1,18 @@
-#content {
-  margin-left: auto;
-  margin-right: auto;
-  width: 650px;
+.fa {
+  width: 50px;
+  font-size: 30px;
+  text-align: center;
+  text-decoration: none;
 }
 
-#greeting-container {
-  margin-top: 20px;
+.fa:hover {
+  opacity: 0.5;
+}
+
+.fa-github {
+  color: black;
+}
+
+.fa-linkedin {
+  color: #007bb5;
 }
