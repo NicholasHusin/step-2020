@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Playlist</title>
+
+    <!-- Required meta tags -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- CSS imports -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="style.css">
+
+    <!-- JavaScript imports -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script src="script.js"></script>
+  </head>
+  <body>
+    <div class="container">
+
+      <!-- Navigation bar -->
+      <nav class="navbar navbar-expand-lg navbar-dark bg-dark rounded-bottom">
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbar-options" aria-controls="navbar-options" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbar-options">
+          <div class="navbar-nav">
+            <a class="nav-item nav-link" href="/index.html">Home</a>
+            <a class="nav-item nav-link active" href="#">Playlist</a>
+            <a class="nav-item nav-link" href="/library.html">Library</a>
+          </div>
+        </div>
+      </nav>
+
+      <br/>
+      <div class="card">
+        <div class="card-header">
+          $ mpv -vo=tct classical/* 2> /dev/null
+        </div>
+        <div class="card-body">
+          <p class="card-text">
+          <button onClick="playVideo('rEGOihjqO9w')" class="btn btn-link">Playing: classical/rachmaninoff_piano_concerto_2.webm</button><br>
+          <button onClick="playVideo('GEdiAcu6sHQ')" class="btn btn-link">Playing: classical/rachmaninoff_piano_concerto_3.webm</button><br>
+          <button onClick="playVideo('c33q87s03h4')" class="btn btn-link">Playing: classical/rhapsody_on_a_theme_of_paganini.webm</button><br>
+          <button onClick="playVideo('J0w0t4Qn6LY')" class="btn btn-link">Playing: classical/sibelius_violin_concerto.webm</button><br>
+          <button onClick="playVideo('hkVrhll9VBA')" class="btn btn-link">Playing: classical/la_valse.webm</button><br>
+          <button onClick="playVideo('Bo0yIuZTQKg')" class="btn btn-link">Playing: classical/shostakovich_concerto_1_for_piano_and_trumpet.webm</button><br>
+          <button onClick="playVideo('AVpnr8dI_50')" class="btn btn-link">Playing: classical/prokofiev_toccata.webm</button><br>
+          <button onClick="playVideo('Il95HXvCdH4')" class="btn btn-link">Playing: classical/prokofiev_piano_concerto_2.webm</button><br>
+          <button onClick="playVideo('JS91p-vmSf0')" class="btn btn-link">Playing: classical/erlkonig.webm</button><br>
+          <button onClick="playVideo('KDJ6Wbzgy3E')" class="btn btn-link">Playing: classical/bruch_violin_concerto.webm</button><br>
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </body>
+</html>
