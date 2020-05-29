@@ -36,3 +36,20 @@ function clickRandomLink(className) {
 
   randomLink.click();
 }
+
+async function loadComments() {
+  const commentsJson = await fetch('/data');
+  const comments = await commentsJson.json();
+  const commentSection = document.getElementById('home-comments');
+
+  for (var i = 0; i < comments.length; ++i) {
+    var commentElement = createListElement(comments[i]);
+    commentSection.appendChild(commentElement);
+  }
+}
+
+function createListElement(text) {
+  const liElement = document.createElement('li');
+  liElement.innerText = text;
+  return liElement;
+}
