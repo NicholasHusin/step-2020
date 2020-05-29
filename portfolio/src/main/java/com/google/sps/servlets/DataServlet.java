@@ -22,29 +22,53 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import com.google.appengine.api.datastore.DatastoreService;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.PreparedQuery;
+import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.gson.Gson;
 
 
 @WebServlet("/data")
 public class DataServlet extends HttpServlet {
-  ArrayList<String> comments = new ArrayList<String>();
 
   @Override
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    String newComment = request.getParameter("new-comment");
-    comments.add(newComment);
+    String content = request.getParameter("new-comment");
+    long timestamp = System.currentTimeMillis();
+
+    Entity commentEntity = new Entity("Comment");
+    commentEntity.setProperty("content", content);
+    commentEntity.setProperty("timestamp", timestamp);
+
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    datastore.put(commentEntity);
+
     response.sendRedirect("/");
   }
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    String json = convertToJson(comments);
+    Query query = new Query("Comment").addSort("timestamp", SortDirection.ASCENDING);
+
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    PreparedQuery results = datastore.prepare(query);
+
+    List<String> commentContents = new ArrayList<>();
+    for (Entity entity : results.asIterable()) {
+      String content = (String) entity.getProperty("content");
+      commentContents.add(content);
+    }
+
+    String json = convertListToJson(commentContents);
 
     response.setContentType("application/json;");
     response.getWriter().println(json);
   }
 
-  private String convertToJson(List<String> comments) {
+  private String convertListToJson(List<String> comments) {
     Gson gson = new Gson();
     String json = gson.toJson(comments);
     return json;
