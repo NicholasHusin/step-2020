@@ -19,7 +19,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     <script src="script.js"></script>
   </head>
-  <body >onload="loadComments()">
+  <body onload="loadComments()">
     <div class="container">
 
       <!-- Header Navigation bar -->
@@ -97,12 +97,14 @@
         <div class="card-body" id="home-comments">
         </div>
       </div>
-      <div class="input-group mb-3 animate__animated animate__fadeIn">
-        <input type="text" class="form-control" placeholder="$COMMENT">
-        <div class="input-group-append">
-          <button class="btn btn-primary" type="button">$ echo $COMMENT >> comments.txt</button>
+      <form action="/data" method="post">
+        <div class="input-group mb-3 animate__animated animate__fadeIn">
+          <input type="text" class="form-control" placeholder="$COMMENT" name="new-comment">
+          <div class="input-group-append">
+            <button class="btn btn-primary" type="submit">$ echo $COMMENT >> comments.txt</button>
+          </div>
         </div>
-      </div>
+      </form>
 
       <!-- Footer -->
       <div class="animate__animated animate__fadeIn">
