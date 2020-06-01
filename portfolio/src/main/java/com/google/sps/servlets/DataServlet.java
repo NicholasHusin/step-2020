@@ -28,11 +28,13 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.SortDirection;
+import com.google.appengine.api.datastore.FetchOptions;
 import com.google.gson.Gson;
 
 
 @WebServlet("/data")
 public class DataServlet extends HttpServlet {
+  private final int DEFAULT_COMMENTS_NUMBER = 5;
 
   @Override
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -51,13 +53,14 @@ public class DataServlet extends HttpServlet {
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    Query query = new Query("Comment").addSort("timestamp", SortDirection.ASCENDING);
+    Query query = new Query("Comment").addSort("timestamp", SortDirection.DESCENDING);
+    int commentsNumber = parseCommentsNumber(request);
 
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
-    PreparedQuery results = datastore.prepare(query);
+    List<Entity> results = datastore.prepare(query).asList(FetchOptions.Builder.withLimit(commentsNumber));
 
     List<String> commentContents = new ArrayList<>();
-    for (Entity entity : results.asIterable()) {
+    for (Entity entity : results) {
       String content = (String) entity.getProperty("content");
       commentContents.add(content);
     }
@@ -72,6 +75,24 @@ public class DataServlet extends HttpServlet {
     Gson gson = new Gson();
     String json = gson.toJson(comments);
     return json;
+  }
+
+  /**
+   * Returns the number of displayed comments selected by the user
+   * DEFAULT_COMMENTS_NUMBER is  if the choice was invalid.
+   **/
+  private int parseCommentsNumber(HttpServletRequest request) {
+    String commentsNumberString = request.getParameter("comments-number");
+
+    int commentsNumber;
+    try {
+      commentsNumber = Integer.parseInt(commentsNumberString);
+    } catch (NumberFormatException e) {
+      System.err.println("Could not convert to int: " + commentsNumberString);
+      return DEFAULT_COMMENTS_NUMBER;
+    }
+
+    return commentsNumber;
   }
 }
 

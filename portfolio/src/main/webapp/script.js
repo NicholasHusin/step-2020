@@ -31,20 +31,28 @@ function playVideo(id) {
 * Randomly clicks a link that has the given class name.
 **/
 function clickRandomLink(className) {
-  var links = document.getElementsByClassName(className);
-  var randomLink = links[Math.floor(Math.random() * links.length)];
+  const links = document.getElementsByClassName(className);
+  const randomLink = links[Math.floor(Math.random() * links.length)];
 
   randomLink.click();
 }
 
-async function loadComments() {
-  const commentsJson = await fetch('/data');
+/**
+* load comments on homepage.
+* The number of comments loaded depends of commentsNumber input.
+* Clears previously loaded comments when called multiple times.
+**/
+async function loadComments(commentsNumber) {
+  const parameters =  {"comments-number" : commentsNumber};
+  const fetchUrl = constructFetchQueryUrl('/data', parameters);
+  const commentsJson = await fetch(fetchUrl);
   const comments = await commentsJson.json();
   const commentSection = document.getElementById('home-comments');
 
+  commentSection.innerHTML = "";
   for (var i = 0; i < comments.length; ++i) {
-    var commentElement = createListElement(comments[i]);
-    commentSection.appendChild(commentElement);
+    let commentElement = createListElement(comments[i]);
+    commentSection.prepend(commentElement);
   }
 }
 
@@ -52,4 +60,12 @@ function createListElement(text) {
   const liElement = document.createElement('li');
   liElement.innerText = text;
   return liElement;
+}
+
+function constructFetchQueryUrl(url, parameters) {
+  const query = Object.keys(parameters)
+    .map(k => k + '=' + parameters[k])
+    .join('&');
+
+  return url + '?' + query;
 }

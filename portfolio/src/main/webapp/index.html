@@ -93,7 +93,7 @@
       <div class="card animate__animated animate__fadeIn"> 
         <div class="card-header form-inline">
           $ tail comments.txt -n <pre> </pre>
-          <select class="form-control" >
+          <select class="form-control" onChange="loadComments(this.options[this.selectedIndex].value)">
             <option value="5">5</option>
             <option value="10">10</option>
             <option value="15">15</option>
