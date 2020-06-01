@@ -91,8 +91,15 @@
 
       <br/>
       <div class="card animate__animated animate__fadeIn"> 
-        <div class="card-header">
-          $ tail comments.txt
+        <div class="card-header form-inline">
+          $ tail comments.txt -n <pre> </pre>
+          <select class="form-control" >
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="25">25</option>
+          </select>
         </div>
         <div class="card-body" id="home-comments">
         </div>
