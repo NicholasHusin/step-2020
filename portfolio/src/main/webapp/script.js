@@ -12,6 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+const YOUTUBE_EMBED_URL         = 'https://www.youtube.com/embed';
+const COMMENT_FETCH_URL         = '/data';
+const COMMENT_NUMBER_PARAMETER  = "comments-number";
+const COMMENT_SECTION_ID        = "home-comments";
+const COMMENT_SECTION_CHILD_TAG = "li";
+
 /**
 * Opens url in new tab.
 **/
@@ -24,15 +30,15 @@ function openNewTab(url) {
 * Uses /embed/ path so the video is opened in full screen.
 **/
 function playVideo(id) {
-    openNewTab('https://www.youtube.com/embed/' + id);
+    openNewTab(YOUTUBE_EMBED_URL + id);
 }
 
 /**
 * Randomly clicks a link that has the given class name.
 **/
 function clickRandomLink(className) {
-  const links = document.getElementsByClassName(className);
-  const randomLink = links[Math.floor(Math.random() * links.length)];
+  const links       = document.getElementsByClassName(className);
+  const randomLink  = links[Math.floor(Math.random() * links.length)];
 
   randomLink.click();
 }
@@ -40,29 +46,29 @@ function clickRandomLink(className) {
 /**
 * load comments on homepage.
 * The number of comments loaded depends of commentsNumber input.
-* Clears previously loaded comments when called multiple times.
+* Clears previously loaded comments when called multiple times (done by setting innerHTML = "").
 **/
 async function loadComments(commentsNumber) {
-  const parameters =  {"comments-number" : commentsNumber};
-  const fetchUrl = constructFetchQueryUrl('/data', parameters);
+  const parameters      = {COMMENT_NUMBER_PARAMETER : commentsNumber};
+  const fetchUrl        = constructFetchQueryUrl(COMMENT_FETCH_URL, parameters);
 
-  const commentsJson = await fetch(fetchUrl);
-  const commentsObject = await commentsJson.json();
+  const commentsJson    = await fetch(fetchUrl);
+  const commentsObject  = await commentsJson.json();
 
-  const commentSection = document.getElementById('home-comments');
-  commentSection.innerHTML = "";
+  const commentSection      = document.getElementById(COMMENT_SECTION_ID);
+  commentSection.innerHTML  = "";
 
   for (var i = 0; i < commentsObject.length; ++i) {
-    let commentText = commentsObject[i].propertyMap.text;  
-    let commentElement = createListElement(commentText);
+    let commentText     = commentsObject[i].propertyMap.text;  
+    let commentElement  = createCommentChild(commentText);
     commentSection.prepend(commentElement);
   }
 }
 
-function createListElement(text) {
-  const liElement = document.createElement('li');
-  liElement.innerText = text;
-  return liElement;
+function createCommentChild(text) {
+  const childElement       = document.createElement(COMMENT_SECTION_CHILD_TAG);
+  childElement.innerText   = text;
+  return childElement;
 }
 
 function constructFetchQueryUrl(url, parameters) {
