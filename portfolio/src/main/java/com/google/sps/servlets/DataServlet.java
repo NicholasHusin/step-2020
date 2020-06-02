@@ -35,25 +35,32 @@ import com.google.gson.Gson;
 @WebServlet("/data")
 public class DataServlet extends HttpServlet {
   private final int DEFAULT_COMMENTS_NUMBER = 5;
+  private final String REDIRECT_URL_HOME = "/";
+  private final String RESPONSE_CONTENT_TYPE_JSON = "application/json;";
+  private final String NEW_COMMENT_PARAMETER = "new-comment";
+  private final String COMMENT_NUMBER_PARAMETER = "comments-number";
+  private final String COMMENT_ENTITY_KIND = "Comment";
+  private final String COMMENT_ENTITY_TEXT = "text";
+  private final String COMMENT_ENTITY_TIMESTAMP = "timestamp";
 
   @Override
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    String content = request.getParameter("new-comment");
+    String text = request.getParameter(NEW_COMMENT_PARAMETER);
     long timestamp = System.currentTimeMillis();
 
-    Entity commentEntity = new Entity("Comment");
-    commentEntity.setProperty("content", content);
-    commentEntity.setProperty("timestamp", timestamp);
+    Entity commentEntity = new Entity(COMMENT_ENTITY_KIND);
+    commentEntity.setProperty(COMMENT_ENTITY_TEXT, text);
+    commentEntity.setProperty(COMMENT_ENTITY_TIMESTAMP, timestamp);
 
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     datastore.put(commentEntity);
 
-    response.sendRedirect("/");
+    response.sendRedirect(REDIRECT_URL_HOME);
   }
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    Query query = new Query("Comment").addSort("timestamp", SortDirection.DESCENDING);
+    Query query = new Query(COMMENT_ENTITY_KIND).addSort(COMMENT_ENTITY_TIMESTAMP, SortDirection.DESCENDING);
     int commentsNumber = parseCommentsNumber(request);
 
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
@@ -61,13 +68,13 @@ public class DataServlet extends HttpServlet {
 
     List<String> commentContents = new ArrayList<>();
     for (Entity entity : results) {
-      String content = (String) entity.getProperty("content");
-      commentContents.add(content);
+      String text = (String) entity.getProperty(COMMENT_ENTITY_TEXT);
+      commentContents.add(text);
     }
 
     String json = convertListToJson(commentContents);
 
-    response.setContentType("application/json;");
+    response.setContentType(RESPONSE_CONTENT_TYPE_JSON);
     response.getWriter().println(json);
   }
 
@@ -82,13 +89,12 @@ public class DataServlet extends HttpServlet {
    * DEFAULT_COMMENTS_NUMBER is  if the choice was invalid.
    **/
   private int parseCommentsNumber(HttpServletRequest request) {
-    String commentsNumberString = request.getParameter("comments-number");
+    String commentsNumberString = request.getParameter(COMMENT_NUMBER_PARAMETER);
 
     int commentsNumber;
     try {
       commentsNumber = Integer.parseInt(commentsNumberString);
     } catch (NumberFormatException e) {
-      System.err.println("Could not convert to int: " + commentsNumberString);
       return DEFAULT_COMMENTS_NUMBER;
     }
 
