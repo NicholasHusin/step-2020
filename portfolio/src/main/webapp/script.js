@@ -53,7 +53,6 @@ async function loadComments(commentsNumber) {
 
   const commentsJson    = await fetch(fetchUrl);
   const commentsObject  = await commentsJson.json();
-  console.log(parameters);
 
   const commentSection      = document.getElementById(COMMENT_SECTION_ID);
   commentSection.innerHTML  = "";
