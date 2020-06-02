@@ -14,9 +14,8 @@
 
 const YOUTUBE_EMBED_URL         = 'https://www.youtube.com/embed';
 const COMMENT_FETCH_URL         = '/data';
-const COMMENT_NUMBER_PARAMETER  = "comments-number";
-const COMMENT_SECTION_ID        = "home-comments";
-const COMMENT_SECTION_CHILD_TAG = "li";
+const COMMENT_SECTION_ID        = 'home-comments';
+const COMMENT_SECTION_CHILD_TAG = 'li';
 
 /**
 * Opens url in new tab.
@@ -49,11 +48,12 @@ function clickRandomLink(className) {
 * Clears previously loaded comments when called multiple times (done by setting innerHTML = "").
 **/
 async function loadComments(commentsNumber) {
-  const parameters      = {COMMENT_NUMBER_PARAMETER : commentsNumber};
+  const parameters      = {'comments-number': commentsNumber};
   const fetchUrl        = constructFetchQueryUrl(COMMENT_FETCH_URL, parameters);
 
   const commentsJson    = await fetch(fetchUrl);
   const commentsObject  = await commentsJson.json();
+  console.log(parameters);
 
   const commentSection      = document.getElementById(COMMENT_SECTION_ID);
   commentSection.innerHTML  = "";
