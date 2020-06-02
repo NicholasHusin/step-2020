@@ -45,13 +45,16 @@ function clickRandomLink(className) {
 async function loadComments(commentsNumber) {
   const parameters =  {"comments-number" : commentsNumber};
   const fetchUrl = constructFetchQueryUrl('/data', parameters);
-  const commentsJson = await fetch(fetchUrl);
-  const comments = await commentsJson.json();
-  const commentSection = document.getElementById('home-comments');
 
+  const commentsJson = await fetch(fetchUrl);
+  const commentsObject = await commentsJson.json();
+
+  const commentSection = document.getElementById('home-comments');
   commentSection.innerHTML = "";
-  for (var i = 0; i < comments.length; ++i) {
-    let commentElement = createListElement(comments[i]);
+
+  for (var i = 0; i < commentsObject.length; ++i) {
+    let commentText = commentsObject[i].propertyMap.text;  
+    let commentElement = createListElement(commentText);
     commentSection.prepend(commentElement);
   }
 }

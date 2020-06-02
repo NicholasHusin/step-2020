@@ -16,8 +16,6 @@ package com.google.sps.servlets;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Arrays;
-import java.util.ArrayList;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -64,28 +62,26 @@ public class DataServlet extends HttpServlet {
     int commentsNumber = parseCommentsNumber(request);
 
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
-    List<Entity> results = datastore.prepare(query).asList(FetchOptions.Builder.withLimit(commentsNumber));
+    List<Entity> commentEntities = datastore.prepare(query).asList(FetchOptions.Builder.withLimit(commentsNumber));
 
-    List<String> commentContents = new ArrayList<>();
-    for (Entity entity : results) {
-      String text = (String) entity.getProperty(COMMENT_ENTITY_TEXT);
-      commentContents.add(text);
-    }
-
-    String json = convertListToJson(commentContents);
+    String json = entitiesToJson(commentEntities);
 
     response.setContentType(RESPONSE_CONTENT_TYPE_JSON);
     response.getWriter().println(json);
   }
 
-  private String convertListToJson(List<String> comments) {
+  /**
+   * Converts a list of entities into a JSON using the GSON library.
+   * Can be used even when more properties are added to entities to support other features as GSON library uses reflection.
+   **/
+  private String entitiesToJson(List<Entity> entities) {
     Gson gson = new Gson();
-    String json = gson.toJson(comments);
+    String json = gson.toJson(entities);
     return json;
   }
 
   /**
-   * Returns the number of displayed comments selected by the user
+   * Returns the number of displayed comments selected by the user.
    * DEFAULT_COMMENTS_NUMBER is  if the choice was invalid.
    **/
   private int parseCommentsNumber(HttpServletRequest request) {
