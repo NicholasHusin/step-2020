@@ -32,19 +32,19 @@ import com.google.gson.Gson;
 
 @WebServlet("/data")
 public class DataServlet extends HttpServlet {
-  private final int DEFAULT_COMMENTS_NUMBER = 5;
-  private final String REDIRECT_URL_HOME = "/";
-  private final String RESPONSE_CONTENT_TYPE_JSON = "application/json;";
-  private final String NEW_COMMENT_PARAMETER = "new-comment";
-  private final String COMMENT_NUMBER_PARAMETER = "comments-number";
-  private final String COMMENT_ENTITY_KIND = "Comment";
-  private final String COMMENT_ENTITY_TEXT = "text";
-  private final String COMMENT_ENTITY_TIMESTAMP = "timestamp";
+  private final int DEFAULT_COMMENTS_NUMBER         = 5;
+  private final String REDIRECT_URL_HOME            = "/";
+  private final String RESPONSE_CONTENT_TYPE_JSON   = "application/json;";
+  private final String NEW_COMMENT_PARAMETER        = "new-comment";
+  private final String COMMENT_NUMBER_PARAMETER     = "comments-number";
+  private final String COMMENT_ENTITY_KIND          = "Comment";
+  private final String COMMENT_ENTITY_TEXT          = "text";
+  private final String COMMENT_ENTITY_TIMESTAMP     = "timestamp";
 
   @Override
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    String text = request.getParameter(NEW_COMMENT_PARAMETER);
-    long timestamp = System.currentTimeMillis();
+    String text     = request.getParameter(NEW_COMMENT_PARAMETER);
+    long timestamp  = System.currentTimeMillis();
 
     Entity commentEntity = new Entity(COMMENT_ENTITY_KIND);
     commentEntity.setProperty(COMMENT_ENTITY_TEXT, text);
@@ -58,11 +58,11 @@ public class DataServlet extends HttpServlet {
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    Query query = new Query(COMMENT_ENTITY_KIND).addSort(COMMENT_ENTITY_TIMESTAMP, SortDirection.DESCENDING);
-    int commentsNumber = parseCommentsNumber(request);
+    Query query         = new Query(COMMENT_ENTITY_KIND).addSort(COMMENT_ENTITY_TIMESTAMP, SortDirection.DESCENDING);
+    int commentsNumber  = parseCommentsNumber(request);
 
-    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
-    List<Entity> commentEntities = datastore.prepare(query).asList(FetchOptions.Builder.withLimit(commentsNumber));
+    DatastoreService datastore      = DatastoreServiceFactory.getDatastoreService();
+    List<Entity> commentEntities    = datastore.prepare(query).asList(FetchOptions.Builder.withLimit(commentsNumber));
 
     String json = entitiesToJson(commentEntities);
 
@@ -75,7 +75,7 @@ public class DataServlet extends HttpServlet {
    * Can be used even when more properties are added to entities to support other features as GSON library uses reflection.
    **/
   private String entitiesToJson(List<Entity> entities) {
-    Gson gson = new Gson();
+    Gson gson   = new Gson();
     String json = gson.toJson(entities);
     return json;
   }

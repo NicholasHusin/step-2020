@@ -14,15 +14,15 @@ import com.google.appengine.api.datastore.Query;
 
 @WebServlet("/delete-data")
 public class DeleteDataServlet extends HttpServlet {
-  private final String REDIRECT_URL_HOME = "/";
-  private final String COMMENT_ENTITY_KIND = "Comment";
+  private final String REDIRECT_URL_HOME    = "/";
+  private final String COMMENT_ENTITY_KIND  = "Comment";
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
     Query query = new Query(COMMENT_ENTITY_KIND);
 
-    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
-    PreparedQuery results = datastore.prepare(query);
+    DatastoreService datastore  = DatastoreServiceFactory.getDatastoreService();
+    PreparedQuery results       = datastore.prepare(query);
 
     for (Entity entity : results.asIterable()) {
       datastore.delete(entity.getKey());
