@@ -15,6 +15,7 @@
 package com.google.sps.servlets;
 
 import java.io.IOException;
+import java.util.Enumeration;
 import java.util.List;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -30,49 +31,72 @@ import com.google.appengine.api.datastore.FetchOptions;
 import com.google.gson.Gson;
 
 
-@WebServlet("/data")
+/**
+* This is a class intended to be inherited by other classes that wants to make use of Datastore.
+* This class provides general usage of Datastore that will be overloaded by classes that inherit it.
+**/
 public class DataServlet extends HttpServlet {
-  private final int DEFAULT_COMMENTS_NUMBER         = 5;
-  private final String REDIRECT_URL_HOME            = "/";
-  private final String RESPONSE_CONTENT_TYPE_JSON   = "application/json;";
-  private final String NEW_COMMENT_PARAMETER        = "new-comment";
-  private final String COMMENT_NUMBER_PARAMETER     = "comments-number";
-  private final String COMMENT_ENTITY_KIND          = "Comment";
-  private final String COMMENT_ENTITY_TEXT          = "text";
-  private final String COMMENT_ENTITY_TIMESTAMP     = "timestamp";
+  protected final String REDIRECT_URL_HOME          = "/";
+  protected final String RESPONSE_CONTENT_TYPE_JSON = "application/json;";
+  protected final String ENTITY_TIMESTAMP_PARAMETER = "timestamp";
+  protected final String ENTITY_KIND_PARAMETER      = "kind";
 
-  @Override
-  public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    String text     = request.getParameter(NEW_COMMENT_PARAMETER);
+  /**
+   * Function that implements a general usage of storing entity in Datastore.
+   * Intended to be overloaded by child of DataServlet class.
+   * Note that parameters value are joined with ",".
+   * This is to account for input types such as checkboxes that has multiple value.
+   **/
+  protected void doPost(HttpServletRequest request, HttpServletResponse response, String entityKind) throws IOException {
+    Entity newEntity = new Entity(entityKind);
+
     long timestamp  = System.currentTimeMillis();
+    newEntity.setProperty(ENTITY_TIMESTAMP_PARAMETER, timestamp);
 
-    Entity commentEntity = new Entity(COMMENT_ENTITY_KIND);
-    commentEntity.setProperty(COMMENT_ENTITY_TEXT, text);
-    commentEntity.setProperty(COMMENT_ENTITY_TIMESTAMP, timestamp);
+    Enumeration<String> parameterNames = request.getParameterNames();
+    while (parameterNames.hasMoreElements()) {
+      String parameterName          = parameterNames.nextElement();
+      String[] parameterValues      = request.getParameterValues(parameterName);
+      String joinedParameterValue   = String.join(",", parameterValues);
+      newEntity.setProperty(parameterName, joinedParameterValue);
+    }
 
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
-    datastore.put(commentEntity);
-
-    response.sendRedirect(REDIRECT_URL_HOME);
+    datastore.put(newEntity);
   }
 
-  @Override
-  public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    Query query         = new Query(COMMENT_ENTITY_KIND).addSort(COMMENT_ENTITY_TIMESTAMP, SortDirection.DESCENDING);
-    int commentsNumber  = parseCommentsNumber(request);
+  /**
+   * Function that implements a general usage of retrieving entity in Datastore.
+   * Intended to be overloaded by child of DataServlet class.
+   **/
+  protected void doGet(HttpServletResponse response, String entityKind, String sortKey, int entityLimit) throws IOException {
+    Query query                 = new Query(entityKind).addSort(sortKey, SortDirection.DESCENDING);
+    DatastoreService datastore  = DatastoreServiceFactory.getDatastoreService();
+    List<Entity> entities       = datastore.prepare(query).asList(FetchOptions.Builder.withLimit(entityLimit));
 
-    DatastoreService datastore      = DatastoreServiceFactory.getDatastoreService();
-    List<Entity> commentEntities    = datastore.prepare(query).asList(FetchOptions.Builder.withLimit(commentsNumber));
-
-    String json = entitiesToJson(commentEntities);
+    String json = entitiesToJson(entities);
 
     response.setContentType(RESPONSE_CONTENT_TYPE_JSON);
     response.getWriter().println(json);
   }
 
   /**
-   * Converts a list of entities into a JSON using the GSON library.
-   * Can be used even when more properties are added to entities to support other features as GSON library uses reflection.
+   * Utility function to delete all entity belonging to certain kind.
+   **/
+  protected void deleteAll(String entityKind) {
+    Query query = new Query(entityKind);
+
+    DatastoreService datastore  = DatastoreServiceFactory.getDatastoreService();
+    PreparedQuery results       = datastore.prepare(query);
+
+    for (Entity entity : results.asIterable()) {
+      datastore.delete(entity.getKey());
+    }
+  }
+
+  /**
+   * Utility function to Convert a list of entities into a JSON using the GSON library.
+   * Can be used with arbitrary enitity properties as GSON library uses reflection.
    **/
   private String entitiesToJson(List<Entity> entities) {
     Gson gson   = new Gson();
@@ -81,20 +105,20 @@ public class DataServlet extends HttpServlet {
   }
 
   /**
-   * Returns the number of displayed comments selected by the user.
-   * DEFAULT_COMMENTS_NUMBER is  if the choice was invalid.
+   * Utility function to parse parameters that are meant to be integer.
+   * Returns -1 if the parameter value is invalid.
    **/
-  private int parseCommentsNumber(HttpServletRequest request) {
-    String commentsNumberString = request.getParameter(COMMENT_NUMBER_PARAMETER);
+  protected int parseIntParameter(HttpServletRequest request, String parameterName) {
+    String parameterValueString = request.getParameter(parameterName);
 
-    int commentsNumber;
+    int parameterValue;
     try {
-      commentsNumber = Integer.parseInt(commentsNumberString);
+      parameterValue = Integer.parseInt(parameterValueString);
     } catch (NumberFormatException e) {
-      return DEFAULT_COMMENTS_NUMBER;
+      return -1;
     }
 
-    return commentsNumber;
+    return parameterValue;
   }
 }
 
