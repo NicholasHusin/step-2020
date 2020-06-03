@@ -13,8 +13,9 @@
 // limitations under the License.
 
 const YOUTUBE_EMBED_URL         = 'https://www.youtube.com/embed';
-const COMMENT_FETCH_URL         = '/data';
+const COMMENT_FETCH_URL         = '/comment-data';
 const COMMENT_SECTION_ID        = 'home-comments';
+const COMMENT_TEXT_ID           = 'comment-text';
 const COMMENT_SECTION_CHILD_TAG = 'li';
 
 /**
@@ -48,6 +49,10 @@ function clickRandomLink(className) {
 * Clears previously loaded comments when called multiple times (done by setting innerHTML = "").
 **/
 async function loadComments(commentsNumber) {
+  // 'comments-number' magic string is intentionally left as is.
+  // This is because constants are taken literally when making objects.
+  // Ex: {COMMENTS_NUMBER_ID: commentsNumber} will not become {'comments-number': commentsNumber}
+  // even if const COMMENTS_NUMBER_ID = 'comments-number' is declared.
   const parameters      = {'comments-number': commentsNumber};
   const fetchUrl        = constructFetchQueryUrl(COMMENT_FETCH_URL, parameters);
 
@@ -58,8 +63,9 @@ async function loadComments(commentsNumber) {
   commentSection.innerHTML  = "";
 
   for (var i = 0; i < commentsObject.length; ++i) {
-    let commentText     = commentsObject[i].propertyMap.text;  
-    let commentElement  = createCommentChild(commentText);
+    let commentProperties   = commentsObject[i].propertyMap;
+    let commentText         = commentProperties[COMMENT_TEXT_ID];
+    let commentElement      = createCommentChild(commentText);
     commentSection.prepend(commentElement);
   }
 }

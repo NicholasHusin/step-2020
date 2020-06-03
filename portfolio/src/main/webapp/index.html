@@ -104,12 +104,12 @@
         <div class="card-body" id="home-comments">
         </div>
       </div>
-      <form action="/data" method="post">
+      <form action="/comment-data" method="post">
         <div class="input-group mb-3 animate__animated animate__fadeIn">
-          <input type="text" class="form-control" placeholder="$COMMENT" name="new-comment">
+          <input type="text" class="form-control" placeholder="$COMMENT" name="comment-text">
           <div class="input-group-append">
             <button class="btn btn-primary" type="submit">$ echo $COMMENT >> comments.txt</button>
-            <a class="btn btn-danger" type="button" href="/delete-data">$ > comments.txt</a>
+            <a class="btn btn-danger" type="button" href="/delete-comment-data">$ > comments.txt</a>
           </div>
         </div>
       </form>
