@@ -19,7 +19,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     <script src="script.js"></script>
   </head>
-  <body onload="loadComments()">
+  <body>
     <div class="container">
 
       <!-- Header Navigation bar -->
@@ -101,14 +101,21 @@
             <option value="25">25</option>
           </select>
         </div>
-        <div class="card-body" id="home-comments">
+        <div class="card-body" id="comments-list">
         </div>
+        <center>
+          <div id="comment-no-access-warning" hidden>
+            <p class="lead">Permission denied: User does not belong to Google group</p>
+          </div>
+          <a class="btn btn-info" id="login-logout-button" type="button" href="#"></a>
+        </center>
+        <br/>
       </div>
       <form action="/comment-data" method="post">
-        <div class="input-group mb-3 animate__animated animate__fadeIn">
+        <div class="input-group mb-3 animate__animated animate__fadeIn" id="comment-controls" hidden>
           <input type="text" class="form-control" placeholder="$COMMENT" name="comment-text">
           <div class="input-group-append">
-            <button class="btn btn-primary" type="submit">$ echo $COMMENT >> comments.txt</button>
+            <button class="btn btn-primary" type="submit">$ echo $(whoami): $COMMENT >> comments.txt</button>
             <a class="btn btn-danger" type="button" href="/delete-comment-data">$ > comments.txt</a>
           </div>
         </div>
