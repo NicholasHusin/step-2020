@@ -17,6 +17,8 @@ package com.google.sps.servlets;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -44,22 +46,14 @@ public class DataServlet extends HttpServlet {
   /**
    * Function that implements a general usage of storing entity in Datastore.
    * Intended to be overloaded by child of DataServlet class.
-   * Note that parameters value are joined with ",".
-   * This is to account for input types such as checkboxes that has multiple value.
    **/
-  protected void doPost(HttpServletRequest request, HttpServletResponse response, String entityKind) throws IOException {
+  protected void doPost(HttpServletRequest request, HttpServletResponse response, String entityKind, 
+                        HashMap<String, String> extraParameters) throws IOException {
+
     Entity newEntity = new Entity(entityKind);
-
-    long timestamp  = System.currentTimeMillis();
-    newEntity.setProperty(ENTITY_TIMESTAMP_PARAMETER, timestamp);
-
-    Enumeration<String> parameterNames = request.getParameterNames();
-    while (parameterNames.hasMoreElements()) {
-      String parameterName          = parameterNames.nextElement();
-      String[] parameterValues      = request.getParameterValues(parameterName);
-      String joinedParameterValue   = String.join(",", parameterValues);
-      newEntity.setProperty(parameterName, joinedParameterValue);
-    }
+    setTimestamp(newEntity);
+    setRequestParameters(newEntity, request);
+    setExtraParameters(newEntity, extraParameters);
 
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     datastore.put(newEntity);
@@ -95,16 +89,6 @@ public class DataServlet extends HttpServlet {
   }
 
   /**
-   * Utility function to Convert a list of entities into a JSON using the GSON library.
-   * Can be used with arbitrary enitity properties as GSON library uses reflection.
-   **/
-  private String entitiesToJson(List<Entity> entities) {
-    Gson gson   = new Gson();
-    String json = gson.toJson(entities);
-    return json;
-  }
-
-  /**
    * Utility function to parse parameters that are meant to be integer.
    * Returns -1 if the parameter value is invalid.
    **/
@@ -119,6 +103,57 @@ public class DataServlet extends HttpServlet {
     }
 
     return parameterValue;
+  }
+
+  /**
+   * Utility function to Convert a list of entities into a JSON using the GSON library.
+   * Can be used with arbitrary enitity properties as GSON library uses reflection.
+   **/
+  private String entitiesToJson(List<Entity> entities) {
+    Gson gson   = new Gson();
+    String json = gson.toJson(entities);
+    return json;
+  }
+
+  /**
+   * Utility function to set the timestamp of entity that are to be stored.
+   **/
+  private void setTimestamp(Entity newEntity) {
+    long timestamp  = System.currentTimeMillis();
+    newEntity.setProperty(ENTITY_TIMESTAMP_PARAMETER, timestamp);
+  }
+
+  /**
+   * Utility function to set the parameters of entity that are to be stored.
+   * Parameters added are the ones attached to the request.
+   * Note that parameters value are joined with ",".
+   * This is to account for input types such as checkboxes that has multiple value.
+   **/
+  private void setRequestParameters(Entity newEntity, HttpServletRequest request) {
+    Enumeration<String> parameterNames = request.getParameterNames();
+    while (parameterNames.hasMoreElements()) {
+      String parameterName          = parameterNames.nextElement();
+      String[] parameterValues      = request.getParameterValues(parameterName);
+      String joinedParameterValue   = String.join(",", parameterValues);
+      newEntity.setProperty(parameterName, joinedParameterValue);
+    }
+  }
+
+  /**
+   * Utility function to set extra parameters of entity that are to be stored.
+   * This is to account for cases when a child class that inherits DataServlet 
+   * would want to attach extra parameters.
+   **/
+  private void setExtraParameters(Entity newEntity, HashMap<String, String> extraParameters) {
+    if (extraParameters == null) {
+      return;
+    }
+
+    for (Map.Entry<String, String> entry : extraParameters.entrySet()) {
+      String extraParameter  = entry.getKey();
+      String extraValue      = entry.getValue();
+      newEntity.setProperty(extraParameter, extraValue);
+    }
   }
 }
 
