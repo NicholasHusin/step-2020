@@ -15,6 +15,10 @@ public class DeleteCommentDataServlet extends CommentDataServlet {
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    if (!hasEnoughPrivilege()) {
+      return;
+    }
+
     deleteAll(ENTITY_KIND);
     response.sendRedirect(REDIRECT_URL_HOME);
   }
