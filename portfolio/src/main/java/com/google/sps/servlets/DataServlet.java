@@ -45,8 +45,11 @@ public class DataServlet extends HttpServlet {
   protected final String RESPONSE_CONTENT_TYPE_JSON = "application/json;";
   protected final String ENTITY_TIMESTAMP_PARAMETER = "timestamp";
   protected final String ENTITY_KIND_PARAMETER      = "kind";
+  protected final String PREV_CURSOR_PARAMETER      = "prev-cursor";
+  protected final String NEXT_CURSOR_PARAMETER      = "next-cursor";
   protected final String CURSOR_PARAMETER           = "cursor";
   protected final String QUERY_RESULT_PARAMETER     = "result";
+  private final String UNDEFINED_STRING             = "undefined";
   private final DatastoreService datastore;
 
   public DataServlet() {
@@ -74,23 +77,29 @@ public class DataServlet extends HttpServlet {
    * Intended to be overloaded by child of DataServlet class.
    **/
   protected void doGet(HttpServletRequest request, HttpServletResponse response, String entityKind, 
-      String sortKey, int entityLimit) throws IOException {
+      String sortKey, int entityLimit, HashMap<String, String> prevCursorMap) throws IOException {
 
     FetchOptions fetchOptions   = FetchOptions.Builder.withLimit(entityLimit);
-    String startCursor          = request.getParameter(CURSOR_PARAMETER);
+    String currentCursor        = request.getParameter(CURSOR_PARAMETER);
 
-    if (startCursor != null) {
-      fetchOptions.startCursor(Cursor.fromWebSafeString(startCursor));
+    if (currentCursor != null && !currentCursor.equals(UNDEFINED_STRING)) {
+      fetchOptions.startCursor(Cursor.fromWebSafeString(currentCursor));
     }
 
     Query query                 = new Query(entityKind).addSort(sortKey, SortDirection.DESCENDING);
     PreparedQuery preparedQuery = datastore.prepare(query);
 
     QueryResultList<Entity> entities    = preparedQuery.asQueryResultList(fetchOptions);
-    String cursorString                 = entities.getCursor().toWebSafeString();
+    String nextCursorString             = entities.getCursor().toWebSafeString();
+    String prevCursorString             = prevCursorMap.get(currentCursor);
+
+    if (currentCursor != null && !currentCursor.equals(UNDEFINED_STRING)) {
+      prevCursorMap.put(nextCursorString, currentCursor);
+    }
 
     HashMap<String, Object> resultMap   = new HashMap<String, Object>();
-    resultMap.put(CURSOR_PARAMETER, cursorString);
+    resultMap.put(PREV_CURSOR_PARAMETER, prevCursorString);
+    resultMap.put(NEXT_CURSOR_PARAMETER, nextCursorString);
     resultMap.put(QUERY_RESULT_PARAMETER, entities);
 
     String json = Parse.toJson(resultMap);
