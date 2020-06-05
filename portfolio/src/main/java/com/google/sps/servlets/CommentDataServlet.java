@@ -23,6 +23,11 @@ public class CommentDataServlet extends DataServlet {
   private static final String GET_COMMENT_URL       = "/comment-get";
   private static final String DELETE_COMMENT_URL    = "/comment-delete";
   protected final String ENTITY_KIND                = "Comment";
+  private HashMap<String, String> prevCursorMap;
+
+  public CommentDataServlet() {
+    prevCursorMap   = new HashMap<String, String>();
+  }
 
   @Override
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -63,13 +68,14 @@ public class CommentDataServlet extends DataServlet {
 
   private void deleteComment(HttpServletRequest request, HttpServletResponse response) throws IOException {
     deleteAll(ENTITY_KIND);
+    prevCursorMap.clear();
   }
 
   private void getComment(HttpServletRequest request, HttpServletResponse response) throws IOException {
     int commentsNumber  = parseIntParameter(request, COMMENT_NUMBER_PARAMETER);
     commentsNumber      = Math.max(commentsNumber, MIN_COMMENTS_NUMBER);
 
-    doGet(request, response, ENTITY_KIND, ENTITY_TIMESTAMP_PARAMETER, commentsNumber);
+    doGet(request, response, ENTITY_KIND, ENTITY_TIMESTAMP_PARAMETER, commentsNumber, prevCursorMap);
   }
 
   /**
