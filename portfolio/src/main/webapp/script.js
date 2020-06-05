@@ -37,9 +37,9 @@ const NON_GOOGLER_ELEMENT_IDS   = ['comment-no-access-warning'];
  * Functions to run when page first loads.
  **/
 window.onload = function() {
-  adjustDisplayToStatus();
   loadLoginLogoutButton();
   loadComments();
+  adjustDisplayToStatus();
 };
 
 
