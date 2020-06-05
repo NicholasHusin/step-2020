@@ -136,9 +136,24 @@ function clickRandomLink(className) {
   randomLink.click();
 }
 
-function updateCommentNav(prevCursorString, nextCursorString) {
+async function updateCommentNav(prevCursorString, nextCursorString, currentResponse) {
   const prevButton = document.getElementById(PREV_COMMENT_ID);
   const nextButton = document.getElementById(NEXT_COMMENT_ID);
+
+  const prevPageResponse = await getComment(prevCursorString);
+  const nextPageResponse = await getComment(nextCursorString);
+
+  if (JSON.stringify(prevPageResponse) === JSON.stringify(currentResponse)) {
+    prevButton.setAttribute(HIDDEN_ATTRIBUTE, true);
+  } else {
+    prevButton.removeAttribute(HIDDEN_ATTRIBUTE);
+  }
+
+  if (nextPageResponse[RESPONSE_RESULT_ID].length === 0) {
+    nextButton.setAttribute(HIDDEN_ATTRIBUTE, true);
+  } else {
+    nextButton.removeAttribute(HIDDEN_ATTRIBUTE);
+  }
 
   prevButton.value = prevCursorString;
   nextButton.value = nextCursorString;
@@ -150,6 +165,27 @@ function updateCommentNav(prevCursorString, nextCursorString) {
  * Clears previously loaded comments when called multiple times (done by setting innerHTML = "").
  **/
 async function loadComments(cursorString) {
+  const responseObject      = await getComment(cursorString);
+
+  const commentsObject      = responseObject[RESPONSE_RESULT_ID];
+  const prevCursorString    = responseObject[RESPONSE_PREV_CURSOR_ID];
+  const nextCursorString    = responseObject[RESPONSE_NEXT_CURSOR_ID];
+
+ await updateCommentNav(prevCursorString, nextCursorString, responseObject);
+
+  const commentSection      = document.getElementById(COMMENT_SECTION_ID);
+  commentSection.innerHTML  = "";
+
+  for (var i = 0; i < commentsObject.length; ++i) {
+    let commentProperties   = commentsObject[i].propertyMap;
+    let commentText         = commentProperties[COMMENT_TEXT_ID];
+    let commentLdap         = commentProperties[COMMENT_LDAP_ID];
+    let commentElement      = createCommentChild(commentLdap + ': ' + commentText);
+    commentSection.prepend(commentElement);
+  }
+}
+
+async function getComment(cursorString) {
   // 'comments-number' magic string is intentionally left as is.
   // This is because constants are taken literally when making objects.
   // Ex: {COMMENTS_NUMBER_ID: commentsNumber} will not become {'comments-number': commentsNumber}
@@ -161,21 +197,7 @@ async function loadComments(cursorString) {
   const responseJson    = await fetch(fetchUrl);
   const responseObject  = await responseJson.json();
 
-  const prevCursorString    = responseObject[RESPONSE_PREV_CURSOR_ID];
-  const nextCursorString    = responseObject[RESPONSE_NEXT_CURSOR_ID];
-  updateCommentNav(prevCursorString, nextCursorString);
-
-  const commentsObject      = responseObject[RESPONSE_RESULT_ID];
-  const commentSection      = document.getElementById(COMMENT_SECTION_ID);
-  commentSection.innerHTML  = "";
-
-  for (var i = 0; i < commentsObject.length; ++i) {
-    let commentProperties   = commentsObject[i].propertyMap;
-    let commentText         = commentProperties[COMMENT_TEXT_ID];
-    let commentLdap         = commentProperties[COMMENT_LDAP_ID];
-    let commentElement      = createCommentChild(commentLdap + ': ' + commentText);
-    commentSection.prepend(commentElement);
-  }
+  return responseObject;
 }
 
 async function postComment() {
