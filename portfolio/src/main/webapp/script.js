@@ -13,8 +13,11 @@
 // limitations under the License.
 
 const YOUTUBE_EMBED_URL         = 'https://www.youtube.com/embed';
-const COMMENT_FETCH_URL         = '/comment-data';
+const GET_COMMENT_URL           = '/comment-get';
+const POST_COMMENT_URL          = '/comment-post';
+const DELETE_COMMENT_URL        = '/comment-delete';
 const COMMENT_SECTION_ID        = 'comments-list';
+const COMMENTS_NUMBER_ID        = 'comments-number';
 const COMMENT_TEXT_ID           = 'comment-text';
 const COMMENT_LDAP_ID           = 'ldap';
 const COMMENT_SECTION_CHILD_TAG = 'li';
@@ -131,13 +134,14 @@ function clickRandomLink(className) {
  * The number of comments loaded depends of commentsNumber input. Will always load 5 at minimum.
  * Clears previously loaded comments when called multiple times (done by setting innerHTML = "").
  **/
-async function loadComments(commentsNumber) {
+async function loadComments() {
   // 'comments-number' magic string is intentionally left as is.
   // This is because constants are taken literally when making objects.
   // Ex: {COMMENTS_NUMBER_ID: commentsNumber} will not become {'comments-number': commentsNumber}
   // even if const COMMENTS_NUMBER_ID = 'comments-number' is declared.
+  const commentsNumber  = document.getElementById(COMMENTS_NUMBER_ID).value;
   const parameters      = {'comments-number': commentsNumber};
-  const fetchUrl        = constructFetchQueryUrl(COMMENT_FETCH_URL, parameters);
+  const fetchUrl        = constructFetchQueryUrl(GET_COMMENT_URL, parameters);
 
   const commentsJson    = await fetch(fetchUrl);
   const commentsObject  = await commentsJson.json();
@@ -152,6 +156,26 @@ async function loadComments(commentsNumber) {
     let commentElement      = createCommentChild(commentLdap + ': ' + commentText);
     commentSection.prepend(commentElement);
   }
+}
+
+async function postComment() {
+  const commentText = document.getElementById(COMMENT_TEXT_ID).value;
+  const parameters  = {'comment-text': commentText};
+  document.getElementById(COMMENT_TEXT_ID).value = '';
+
+  const fetchUrl = constructFetchQueryUrl(POST_COMMENT_URL, parameters);
+  await fetchPost(fetchUrl);
+  
+  loadComments();
+}
+
+async function deleteComment() {
+  await fetchPost(DELETE_COMMENT_URL);
+  loadComments();
+}
+
+async function fetchPost(url) {
+  return await fetch(url, {method: 'POST'});
 }
 
 function createCommentChild(text) {
