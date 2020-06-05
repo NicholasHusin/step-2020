@@ -14,12 +14,15 @@ import com.google.sps.utils.AuthCheck;
  * This class overloads DataServlet methods.
  * Note that deletion is implement by the child of this class: DeleteCommentDataServlet.
  **/
-@WebServlet("/comment-data")
+@WebServlet(urlPatterns={"/comment-post", "/comment-get", "/comment-delete"})
 public class CommentDataServlet extends DataServlet {
-  private final int MIN_COMMENTS_NUMBER         = 5;
-  private final String COMMENT_NUMBER_PARAMETER = "comments-number";
-  private final String USER_LDAP_PARAMETER      = "ldap";
-  protected final String ENTITY_KIND            = "Comment";
+  private final int MIN_COMMENTS_NUMBER             = 5;
+  private final String COMMENT_NUMBER_PARAMETER     = "comments-number";
+  private final String USER_LDAP_PARAMETER          = "ldap";
+  private static final String POST_COMMENT_URL      = "/comment-post";
+  private static final String GET_COMMENT_URL       = "/comment-get";
+  private static final String DELETE_COMMENT_URL    = "/comment-delete";
+  protected final String ENTITY_KIND                = "Comment";
 
   @Override
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -27,11 +30,15 @@ public class CommentDataServlet extends DataServlet {
       return;
     }
 
-    HashMap<String,String> extraParameters = new HashMap<String, String>();
-    extraParameters.put(USER_LDAP_PARAMETER, AuthCheck.getLdap());
+    String requestUrl = request.getRequestURI();
 
-    doPost(request, response, ENTITY_KIND, extraParameters);
-    response.sendRedirect(REDIRECT_URL_HOME);
+    if (requestUrl.equals(POST_COMMENT_URL)) {
+      postComment(request, response);
+    }
+
+    if (requestUrl.equals(DELETE_COMMENT_URL)) {
+      deleteComment(request, response);
+    }
   }
 
   @Override
@@ -40,6 +47,25 @@ public class CommentDataServlet extends DataServlet {
       return;
     }
 
+    String requestUrl = request.getRequestURI();
+
+    if (requestUrl.equals(GET_COMMENT_URL)) {
+      getComment(request, response);
+    }
+  }
+
+  private void postComment(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    HashMap<String,String> extraParameters = new HashMap<String, String>();
+    extraParameters.put(USER_LDAP_PARAMETER, AuthCheck.getLdap());
+
+    doPost(request, response, ENTITY_KIND, extraParameters);
+  }
+
+  private void deleteComment(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    deleteAll(ENTITY_KIND);
+  }
+
+  private void getComment(HttpServletRequest request, HttpServletResponse response) throws IOException {
     int commentsNumber  = parseIntParameter(request, COMMENT_NUMBER_PARAMETER);
     commentsNumber      = Math.max(commentsNumber, MIN_COMMENTS_NUMBER);
 
