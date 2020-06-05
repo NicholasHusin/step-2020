@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.google.sps.utils.AuthCheck;
+import com.google.sps.utils.Parse;
 import com.google.gson.Gson;
 
 /**
@@ -51,11 +52,6 @@ public class AuthCheckServlet extends HttpServlet {
       responseString = AuthCheck.generateLogoutUrl(redirectUrl);
     }
 
-    response.getWriter().print(stringToJson(responseString));
-  }
-
-  private String stringToJson(String str) {
-    Gson gson   = new Gson();
-    return gson.toJson(str);
+    response.getWriter().print(Parse.toJson(responseString));
   }
 }
