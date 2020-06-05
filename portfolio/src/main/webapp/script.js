@@ -67,6 +67,8 @@ async function loadLoginLogoutButton() {
     button.setAttribute(HREF_ATTRIBUTE, loginUrl);
     button.innerText        = LOGIN_MESSAGE;
   }
+
+  button.removeAttribute(HIDDEN_ATTRIBUTE);
 }
 
 /**
@@ -165,7 +167,7 @@ async function postComment() {
 
   const fetchUrl = constructFetchQueryUrl(POST_COMMENT_URL, parameters);
   await fetchPost(fetchUrl);
-  
+
   loadComments();
 }
 
