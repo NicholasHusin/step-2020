@@ -20,6 +20,9 @@ const COMMENT_SECTION_ID        = 'comments-list';
 const COMMENTS_NUMBER_ID        = 'comments-number';
 const COMMENT_TEXT_ID           = 'comment-text';
 const COMMENT_LDAP_ID           = 'ldap';
+const RESPONSE_RESULT_ID        = 'result';
+const RESPONSE_NEXT_CURSOR_ID   = 'next-cursor';
+const RESPONSE_PREV_CURSOR_ID   = 'prev-cursor';
 const COMMENT_SECTION_CHILD_TAG = 'li';
 const AUTH_STATUS_URL           = '/auth-status';
 const LOGIN_URL                 = '/auth-login';
@@ -30,7 +33,9 @@ const HREF_ATTRIBUTE            = 'href';
 const LOGIN_LOGOUT_BUTTON_ID    = 'login-logout-button';
 const LOGIN_MESSAGE             = 'Login';
 const LOGOUT_MESSAGE            = 'Logout';
-const GOOGLER_ELEMENT_IDS       = ['comment-controls'];
+const NEXT_COMMENT_ID           = 'next-comment';
+const PREV_COMMENT_ID           = 'prev-comment';
+const GOOGLER_ELEMENT_IDS       = ['comment-controls', 'comment-nav'];
 const NON_GOOGLER_ELEMENT_IDS   = ['comment-no-access-warning'];
 
 /**
@@ -131,23 +136,36 @@ function clickRandomLink(className) {
   randomLink.click();
 }
 
+function updateCommentNav(prevCursorString, nextCursorString) {
+  const prevButton = document.getElementById(PREV_COMMENT_ID);
+  const nextButton = document.getElementById(NEXT_COMMENT_ID);
+
+  prevButton.value = prevCursorString;
+  nextButton.value = nextCursorString;
+}
+
 /**
- * load comments on homepage.
+ * load comments on homepage and updates the navigation button.
  * The number of comments loaded depends of commentsNumber input. Will always load 5 at minimum.
  * Clears previously loaded comments when called multiple times (done by setting innerHTML = "").
  **/
-async function loadComments() {
+async function loadComments(cursorString) {
   // 'comments-number' magic string is intentionally left as is.
   // This is because constants are taken literally when making objects.
   // Ex: {COMMENTS_NUMBER_ID: commentsNumber} will not become {'comments-number': commentsNumber}
   // even if const COMMENTS_NUMBER_ID = 'comments-number' is declared.
   const commentsNumber  = document.getElementById(COMMENTS_NUMBER_ID).value;
-  const parameters      = {'comments-number': commentsNumber};
+  const parameters      = {'comments-number': commentsNumber, 'cursor': cursorString};
   const fetchUrl        = constructFetchQueryUrl(GET_COMMENT_URL, parameters);
 
-  const commentsJson    = await fetch(fetchUrl);
-  const commentsObject  = await commentsJson.json();
+  const responseJson    = await fetch(fetchUrl);
+  const responseObject  = await responseJson.json();
 
+  const prevCursorString    = responseObject[RESPONSE_PREV_CURSOR_ID];
+  const nextCursorString    = responseObject[RESPONSE_NEXT_CURSOR_ID];
+  updateCommentNav(prevCursorString, nextCursorString);
+
+  const commentsObject      = responseObject[RESPONSE_RESULT_ID];
   const commentSection      = document.getElementById(COMMENT_SECTION_ID);
   commentSection.innerHTML  = "";
 
