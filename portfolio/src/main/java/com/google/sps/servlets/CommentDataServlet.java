@@ -69,7 +69,7 @@ public class CommentDataServlet extends DataServlet {
     int commentsNumber  = parseIntParameter(request, COMMENT_NUMBER_PARAMETER);
     commentsNumber      = Math.max(commentsNumber, MIN_COMMENTS_NUMBER);
 
-    doGet(response, ENTITY_KIND, ENTITY_TIMESTAMP_PARAMETER, commentsNumber);
+    doGet(request, response, ENTITY_KIND, ENTITY_TIMESTAMP_PARAMETER, commentsNumber);
   }
 
   /**
