@@ -30,7 +30,7 @@ import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.appengine.api.datastore.FetchOptions;
-import com.google.gson.Gson;
+import com.google.sps.utils.Parse;
 
 
 /**
@@ -68,7 +68,7 @@ public class DataServlet extends HttpServlet {
     DatastoreService datastore  = DatastoreServiceFactory.getDatastoreService();
     List<Entity> entities       = datastore.prepare(query).asList(FetchOptions.Builder.withLimit(entityLimit));
 
-    String json = entitiesToJson(entities);
+    String json = Parse.toJson(entities);
 
     response.setContentType(RESPONSE_CONTENT_TYPE_JSON);
     response.getWriter().println(json);
@@ -103,16 +103,6 @@ public class DataServlet extends HttpServlet {
     }
 
     return parameterValue;
-  }
-
-  /**
-   * Utility function to Convert a list of entities into a JSON using the GSON library.
-   * Can be used with arbitrary enitity properties as GSON library uses reflection.
-   **/
-  private String entitiesToJson(List<Entity> entities) {
-    Gson gson   = new Gson();
-    String json = gson.toJson(entities);
-    return json;
   }
 
   /**
