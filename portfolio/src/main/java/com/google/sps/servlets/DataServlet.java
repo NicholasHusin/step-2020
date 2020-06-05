@@ -28,27 +28,37 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.QueryResultList;
+import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.appengine.api.datastore.FetchOptions;
+import com.google.appengine.api.datastore.Cursor;
 import com.google.sps.utils.Parse;
 
 
 /**
-* This is a class intended to be inherited by other classes that wants to make use of Datastore.
-* This class provides general usage of Datastore that will be overloaded by classes that inherit it.
-**/
+ * This is a class intended to be inherited by other classes that wants to make use of Datastore.
+ * This class provides general usage of Datastore that will be overloaded by classes that inherit it.
+ **/
 public class DataServlet extends HttpServlet {
   protected final String REDIRECT_URL_HOME          = "/";
   protected final String RESPONSE_CONTENT_TYPE_JSON = "application/json;";
   protected final String ENTITY_TIMESTAMP_PARAMETER = "timestamp";
   protected final String ENTITY_KIND_PARAMETER      = "kind";
+  protected final String CURSOR_PARAMETER           = "cursor";
+  protected final String QUERY_RESULT_PARAMETER     = "result";
+  private final DatastoreService datastore;
+
+  public DataServlet() {
+    datastore = DatastoreServiceFactory.getDatastoreService();
+  }
 
   /**
    * Function that implements a general usage of storing entity in Datastore.
    * Intended to be overloaded by child of DataServlet class.
    **/
   protected void doPost(HttpServletRequest request, HttpServletResponse response, String entityKind, 
-                        HashMap<String, String> extraParameters) throws IOException {
+      HashMap<String, String> extraParameters) throws IOException {
 
     Entity newEntity = new Entity(entityKind);
     setTimestamp(newEntity);
@@ -63,12 +73,27 @@ public class DataServlet extends HttpServlet {
    * Function that implements a general usage of retrieving entity in Datastore.
    * Intended to be overloaded by child of DataServlet class.
    **/
-  protected void doGet(HttpServletResponse response, String entityKind, String sortKey, int entityLimit) throws IOException {
-    Query query                 = new Query(entityKind).addSort(sortKey, SortDirection.DESCENDING);
-    DatastoreService datastore  = DatastoreServiceFactory.getDatastoreService();
-    List<Entity> entities       = datastore.prepare(query).asList(FetchOptions.Builder.withLimit(entityLimit));
+  protected void doGet(HttpServletRequest request, HttpServletResponse response, String entityKind, 
+      String sortKey, int entityLimit) throws IOException {
 
-    String json = Parse.toJson(entities);
+    FetchOptions fetchOptions   = FetchOptions.Builder.withLimit(entityLimit);
+    String startCursor          = request.getParameter(CURSOR_PARAMETER);
+
+    if (startCursor != null) {
+      fetchOptions.startCursor(Cursor.fromWebSafeString(startCursor));
+    }
+
+    Query query                 = new Query(entityKind).addSort(sortKey, SortDirection.DESCENDING);
+    PreparedQuery preparedQuery = datastore.prepare(query);
+
+    QueryResultList<Entity> entities    = preparedQuery.asQueryResultList(fetchOptions);
+    String cursorString                 = entities.getCursor().toWebSafeString();
+
+    HashMap<String, Object> resultMap   = new HashMap<String, Object>();
+    resultMap.put(CURSOR_PARAMETER, cursorString);
+    resultMap.put(QUERY_RESULT_PARAMETER, entities);
+
+    String json = Parse.toJson(resultMap);
 
     response.setContentType(RESPONSE_CONTENT_TYPE_JSON);
     response.getWriter().println(json);
