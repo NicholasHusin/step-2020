@@ -25,6 +25,10 @@ public class CommentDataServlet extends DataServlet {
   protected final String ENTITY_KIND                = "Comment";
   private HashMap<String, String> prevCursorMap;
 
+  /**
+   * Initialize a server-side cache of previous cursors that are used in datastore pagination.
+   * The cache is updated whenever we access a new page of comments and cleared when comments are deleted.
+   **/
   public CommentDataServlet() {
     prevCursorMap   = new HashMap<String, String>();
   }
@@ -59,6 +63,10 @@ public class CommentDataServlet extends DataServlet {
     }
   }
 
+  /**
+   * Function to post a new comment.
+   * Attaches LDAP parameter to the comment to keep track of usernames.
+   **/
   private void postComment(HttpServletRequest request, HttpServletResponse response) throws IOException {
     HashMap<String,String> extraParameters = new HashMap<String, String>();
     extraParameters.put(USER_LDAP_PARAMETER, AuthCheck.getLdap());
@@ -66,11 +74,19 @@ public class CommentDataServlet extends DataServlet {
     doPost(request, response, ENTITY_KIND, extraParameters);
   }
 
+  /**
+   * Function to delete all comments.
+   * Clears prevCursorMap cache as it will no longer be valid after the comment deletion.
+   **/
   private void deleteComment(HttpServletRequest request, HttpServletResponse response) throws IOException {
     deleteAll(ENTITY_KIND);
     prevCursorMap.clear();
   }
 
+  /**
+   * Function to get a new comment.
+   * prevCursorMap cache will be updated when accessing a new page.
+   **/
   private void getComment(HttpServletRequest request, HttpServletResponse response) throws IOException {
     int commentsNumber  = parseIntParameter(request, COMMENT_NUMBER_PARAMETER);
     commentsNumber      = Math.max(commentsNumber, MIN_COMMENTS_NUMBER);
