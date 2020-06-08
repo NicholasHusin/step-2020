@@ -136,12 +136,16 @@ function clickRandomLink(className) {
   randomLink.click();
 }
 
+/**
+ * Helper function to update the comment navigation buttons
+ * Will hide buttons that are not usable (prev button on first page and next button on last page).
+ **/
 async function updateCommentNav(prevCursorString, nextCursorString, currentResponse) {
   const prevButton = document.getElementById(PREV_COMMENT_ID);
   const nextButton = document.getElementById(NEXT_COMMENT_ID);
 
-  const prevPageResponse = await getComment(prevCursorString);
-  const nextPageResponse = await getComment(nextCursorString);
+  const prevPageResponse = await getCommentResponse(prevCursorString);
+  const nextPageResponse = await getCommentResponse(nextCursorString);
 
   if (JSON.stringify(prevPageResponse) === JSON.stringify(currentResponse)) {
     prevButton.setAttribute(HIDDEN_ATTRIBUTE, true);
@@ -165,13 +169,13 @@ async function updateCommentNav(prevCursorString, nextCursorString, currentRespo
  * Clears previously loaded comments when called multiple times (done by setting innerHTML = "").
  **/
 async function loadComments(cursorString) {
-  const responseObject      = await getComment(cursorString);
+  const responseObject      = await getCommentResponse(cursorString);
 
   const commentsObject      = responseObject[RESPONSE_RESULT_ID];
   const prevCursorString    = responseObject[RESPONSE_PREV_CURSOR_ID];
   const nextCursorString    = responseObject[RESPONSE_NEXT_CURSOR_ID];
 
- await updateCommentNav(prevCursorString, nextCursorString, responseObject);
+  await updateCommentNav(prevCursorString, nextCursorString, responseObject);
 
   const commentSection      = document.getElementById(COMMENT_SECTION_ID);
   commentSection.innerHTML  = "";
@@ -185,11 +189,12 @@ async function loadComments(cursorString) {
   }
 }
 
-async function getComment(cursorString) {
-  // 'comments-number' magic string is intentionally left as is.
-  // This is because constants are taken literally when making objects.
-  // Ex: {COMMENTS_NUMBER_ID: commentsNumber} will not become {'comments-number': commentsNumber}
-  // even if const COMMENTS_NUMBER_ID = 'comments-number' is declared.
+/**
+ * Helper function to get response from GET_COMMENT_URL.
+ * 'comments-number' magic string is intentionally left as is.
+ * This is because constants are taken literally when making objects.
+ **/
+async function getCommentResponse(cursorString) {
   const commentsNumber  = document.getElementById(COMMENTS_NUMBER_ID).value;
   const parameters      = {'comments-number': commentsNumber, 'cursor': cursorString};
   const fetchUrl        = constructFetchQueryUrl(GET_COMMENT_URL, parameters);
@@ -200,6 +205,12 @@ async function getComment(cursorString) {
   return responseObject;
 }
 
+/**
+ * Function used to post a new comment typed in COMMENT_TEXT_ID element.
+ * Clears out the typed comment and reloads the comments section.
+ * 'comments-number' magic string is intentionally left as is.
+ * This is because constants are taken literally when making objects.
+ **/
 async function postComment() {
   const commentText = document.getElementById(COMMENT_TEXT_ID).value;
   const parameters  = {'comment-text': commentText};
