@@ -34,6 +34,7 @@ import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Cursor;
 import com.google.sps.utils.Parse;
+import com.google.sps.utils.Language;
 
 
 /**
@@ -41,16 +42,17 @@ import com.google.sps.utils.Parse;
  * This class provides general usage of Datastore that will be overloaded by classes that inherit it.
  **/
 public class DataServlet extends HttpServlet {
-  protected final String REDIRECT_URL_HOME          = "/";
-  protected final String RESPONSE_CONTENT_TYPE_JSON = "application/json;";
-  protected final String ENTITY_TIMESTAMP_PARAMETER = "timestamp";
-  protected final String ENTITY_KIND_PARAMETER      = "kind";
-  protected final String PREV_CURSOR_PARAMETER      = "prev-cursor";
-  protected final String NEXT_CURSOR_PARAMETER      = "next-cursor";
-  protected final String CURSOR_PARAMETER           = "cursor";
-  protected final String QUERY_RESULT_PARAMETER     = "result";
-  private final String UNDEFINED_STRING             = "undefined";
-  private final DatastoreService datastore;
+  protected static final String REDIRECT_URL_HOME           = "/";
+  protected static final String RESPONSE_CONTENT_TYPE_JSON  = "application/json; charset=UTF-8";
+  protected static final String ENTITY_TIMESTAMP_PARAMETER  = "timestamp";
+  protected static final String ENTITY_KIND_PARAMETER       = "kind";
+  protected static final String PREV_CURSOR_PARAMETER       = "prev-cursor";
+  protected static final String NEXT_CURSOR_PARAMETER       = "next-cursor";
+  protected static final String CURSOR_PARAMETER            = "cursor";
+  protected static final String QUERY_RESULT_PARAMETER      = "result";
+  protected static final String LANGUAGE_CODE_PARAMETER     = "language";
+  protected static final String UNDEFINED_STRING            = "undefined";
+  private static DatastoreService datastore;
 
   public DataServlet() {
     datastore = DatastoreServiceFactory.getDatastoreService();
@@ -75,9 +77,12 @@ public class DataServlet extends HttpServlet {
   /**
    * Function that implements a general usage of retrieving entity in Datastore.
    * Intended to be overloaded by child of DataServlet class.
+   * Takes in prevCursorMap that acts as a cursor cache to keep track of previous cursors.
+   * Also takes in translationMap that specifies which property of the entities fetched should be translated
+   * and to what languagei (leave as null if no translation is needed). 
    **/
   protected void doGet(HttpServletRequest request, HttpServletResponse response, String entityKind, 
-      String sortKey, int entityLimit, HashMap<String, String> prevCursorMap) throws IOException {
+      String sortKey, int entityLimit, HashMap<String, String> prevCursorMap, HashMap<String, String> translationMap) throws IOException {
 
     FetchOptions fetchOptions   = FetchOptions.Builder.withLimit(entityLimit);
     String currentCursor        = request.getParameter(CURSOR_PARAMETER);
@@ -92,6 +97,10 @@ public class DataServlet extends HttpServlet {
     QueryResultList<Entity> entities    = preparedQuery.asQueryResultList(fetchOptions);
     String nextCursorString             = entities.getCursor().toWebSafeString();
     String prevCursorString             = prevCursorMap.get(currentCursor);
+
+    if (translationMap != null) {
+      translateQueryResult(entities, translationMap);
+    }
 
     if (currentCursor != null && !currentCursor.equals(UNDEFINED_STRING)) {
       prevCursorMap.put(nextCursorString, currentCursor);
@@ -179,6 +188,23 @@ public class DataServlet extends HttpServlet {
       newEntity.setProperty(extraParameter, extraValue);
     }
   }
+
+  /**
+   * Utility function to translate properties that are attached to entities.
+   * Only properties that are listed in the translationMap as keys will be translated.
+   * The language each property will be translated to depends on the value in the translationMap.
+   **/
+  private void translateQueryResult(QueryResultList<Entity> entities, HashMap<String, String> translationMap) {
+    for (Entity entity : entities) {
+      for (Map.Entry<String, String> entry : translationMap.entrySet()) {
+        String property     = entry.getKey();
+        String languageCode = entry.getValue();
+
+        String originalPropertyValue    = (String) entity.getProperty(property);
+        String translatedPropertyValue  = Language.translate(originalPropertyValue, languageCode);
+
+        entity.setProperty(property, translatedPropertyValue);
+      }
+    }
+  }
 }
-
-
