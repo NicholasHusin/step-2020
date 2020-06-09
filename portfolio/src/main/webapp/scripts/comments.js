@@ -11,19 +11,39 @@ const RESPONSE_PREV_CURSOR_ID   = 'prev-cursor';
 const COMMENT_SECTION_CHILD_TAG = 'li';
 const NEXT_COMMENT_ID           = 'next-comment';
 const PREV_COMMENT_ID           = 'prev-comment';
+const CURR_COMMENT_ID           = 'curr-comment';
+const COMMENT_LANGUAGE_ID       = 'comment-language';
 
 /**
  * Functions to run when page first loads.
  **/
 window.addEventListener('load', function() {
   loadComments();
+  addElementListeners();
 });
+
+/**
+ * Functions to add listeners to elements in the page
+ **/
+function addElementListeners() {
+  document.getElementById(COMMENTS_NUMBER_ID).addEventListener('change', function () {
+    const currCursorString = document.getElementById(CURR_COMMENT_ID).value;
+    loadComments(currCursorString);
+  });
+
+  document.getElementById(COMMENT_LANGUAGE_ID).addEventListener('change', function() {
+    const currCursorString = document.getElementById(CURR_COMMENT_ID).value;
+    loadComments(currCursorString);
+  });
+}
 
 /**
  * Helper function to update the comment navigation buttons
  * Will hide buttons that are not usable (prev button on first page and next button on last page).
+ * The current cursor value tracked in the hidden element CURR_COMMENT_ID will also be updated.
  **/
-async function updateCommentNav(prevCursorString, nextCursorString, currentResponse) {
+async function updateCommentNav(currCursorString, prevCursorString, nextCursorString, currentResponse) {
+  const currCursor = document.getElementById(CURR_COMMENT_ID);
   const prevButton = document.getElementById(PREV_COMMENT_ID);
   const nextButton = document.getElementById(NEXT_COMMENT_ID);
 
@@ -42,6 +62,7 @@ async function updateCommentNav(prevCursorString, nextCursorString, currentRespo
     nextButton.removeAttribute(HIDDEN_ATTRIBUTE);
   }
 
+  currCursor.value = currCursorString;
   prevButton.value = prevCursorString;
   nextButton.value = nextCursorString;
 }
@@ -58,7 +79,7 @@ async function loadComments(cursorString) {
   const prevCursorString    = responseObject[RESPONSE_PREV_CURSOR_ID];
   const nextCursorString    = responseObject[RESPONSE_NEXT_CURSOR_ID];
 
-  await updateCommentNav(prevCursorString, nextCursorString, responseObject);
+  await updateCommentNav(cursorString, prevCursorString, nextCursorString, responseObject);
 
   const commentSection      = document.getElementById(COMMENT_SECTION_ID);
   commentSection.innerHTML  = '';
@@ -74,12 +95,14 @@ async function loadComments(cursorString) {
 
 /**
  * Helper function to get response from GET_COMMENT_URL.
- * 'comments-number' magic string is intentionally left as is.
+ * 'comments-number', 'cursor', and 'language' magic string is intentionally left as is.
  * This is because constants are taken literally when making objects.
  **/
 async function getCommentResponse(cursorString) {
-  const commentsNumber  = document.getElementById(COMMENTS_NUMBER_ID).value;
-  const parameters      = {'comments-number': commentsNumber, 'cursor': cursorString};
+  const commentsNumber      = document.getElementById(COMMENTS_NUMBER_ID).value;
+  const commentsLanguage    = document.getElementById(COMMENT_LANGUAGE_ID).value;
+
+  const parameters      = {'comments-number': commentsNumber, 'cursor': cursorString, 'language': commentsLanguage};
   const fetchUrl        = constructFetchQueryUrl(GET_COMMENT_URL, parameters);
 
   const responseJson    = await fetch(fetchUrl);
