@@ -16,14 +16,15 @@ import com.google.sps.utils.AuthCheck;
  **/
 @WebServlet(urlPatterns={"/comment-post", "/comment-get", "/comment-delete"})
 public class CommentDataServlet extends DataServlet {
-  private final int MIN_COMMENTS_NUMBER             = 5;
-  private final String COMMENT_NUMBER_PARAMETER     = "comments-number";
-  private final String USER_LDAP_PARAMETER          = "ldap";
-  private static final String POST_COMMENT_URL      = "/comment-post";
-  private static final String GET_COMMENT_URL       = "/comment-get";
-  private static final String DELETE_COMMENT_URL    = "/comment-delete";
-  protected final String ENTITY_KIND                = "Comment";
-  private HashMap<String, String> prevCursorMap;
+  private static final int MIN_COMMENTS_NUMBER              = 5;
+  private static final String COMMENT_NUMBER_PARAMETER      = "comments-number";
+  private static final String USER_LDAP_PARAMETER           = "ldap";
+  private static final String COMMENT_TEXT_PARAMETER        = "comment-text";
+  private static final String POST_COMMENT_URL              = "/comment-post";
+  private static final String GET_COMMENT_URL               = "/comment-get";
+  private static final String DELETE_COMMENT_URL            = "/comment-delete";
+  private static final String ENTITY_KIND                   = "Comment";
+  private static HashMap<String, String> prevCursorMap;
 
   /**
    * Initialize a server-side cache of previous cursors that are used in datastore pagination.
@@ -90,8 +91,15 @@ public class CommentDataServlet extends DataServlet {
   private void getComment(HttpServletRequest request, HttpServletResponse response) throws IOException {
     int commentsNumber  = parseIntParameter(request, COMMENT_NUMBER_PARAMETER);
     commentsNumber      = Math.max(commentsNumber, MIN_COMMENTS_NUMBER);
+    String languageCode = request.getParameter(LANGUAGE_CODE_PARAMETER);
 
-    doGet(request, response, ENTITY_KIND, ENTITY_TIMESTAMP_PARAMETER, commentsNumber, prevCursorMap);
+    HashMap<String, String> translationMap = null;
+    if (languageCode != null && !languageCode.equals(UNDEFINED_STRING)) {
+      translationMap = new HashMap<String, String>();
+      translationMap.put(COMMENT_TEXT_PARAMETER, languageCode);
+    }
+
+    doGet(request, response, ENTITY_KIND, ENTITY_TIMESTAMP_PARAMETER, commentsNumber, prevCursorMap, translationMap);
   }
 
   /**
@@ -104,5 +112,3 @@ public class CommentDataServlet extends DataServlet {
     return AuthCheck.isGoogleEmail();
   }
 }
-
-
