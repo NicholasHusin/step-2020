@@ -15,7 +15,7 @@ const PREV_COMMENT_ID           = 'prev-comment';
 /**
  * Functions to run when page first loads.
  **/
-window.addEventListener("load", function() {
+window.addEventListener('load', function() {
   loadComments();
 });
 
@@ -49,7 +49,7 @@ async function updateCommentNav(prevCursorString, nextCursorString, currentRespo
 /**
  * load comments on homepage and updates the navigation button.
  * The number of comments loaded depends of commentsNumber input. Will always load 5 at minimum.
- * Clears previously loaded comments when called multiple times (done by setting innerHTML = "").
+ * Clears previously loaded comments when called multiple times (done by setting innerHTML = '').
  **/
 async function loadComments(cursorString) {
   const responseObject      = await getCommentResponse(cursorString);
@@ -61,7 +61,7 @@ async function loadComments(cursorString) {
   await updateCommentNav(prevCursorString, nextCursorString, responseObject);
 
   const commentSection      = document.getElementById(COMMENT_SECTION_ID);
-  commentSection.innerHTML  = "";
+  commentSection.innerHTML  = '';
 
   for (var i = 0; i < commentsObject.length; ++i) {
     let commentProperties   = commentsObject[i].propertyMap;

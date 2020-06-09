@@ -13,7 +13,7 @@ const NON_GOOGLER_ELEMENT_IDS   = ['comment-no-access-warning'];
 /**
  * Functions to run when page first loads.
  **/
-window.addEventListener("load", function() {
+window.addEventListener('load', function() {
   loadLoginLogoutButton();
   adjustDisplayToStatus();
 });
@@ -21,7 +21,7 @@ window.addEventListener("load", function() {
 /**
  * Loads login / logout button according to the user status.
  * The button will redirect back to the page where the user click the button.
- * Clears previously loaded comments when called multiple times (done by setting innerHTML = "").
+ * Clears previously loaded comments when called multiple times (done by setting innerHTML = '').
  * 'redirect' magic string is intentionally left as is.
  * This is because constants are taken literally when making objects.
  **/
