@@ -22,8 +22,24 @@ import java.util.Set;
 
 public final class FindMeetingQuery {
   public Collection<TimeRange> query(Collection<Event> events, MeetingRequest request) {
-    ArrayList<TimeRange> busyTimes = calculateBusyMandatoryTimes(events, request);
-    return calculateAvailableTimes(busyTimes, request);
+    ArrayList<TimeRange> busyMandatoryTimes = calculateBusyMandatoryTimes(events, request);
+    ArrayList<TimeRange> busyOptionalTimes  = calculateBusyOptionalTimes(events, request);
+    ArrayList<TimeRange> busyAllTimes       = new ArrayList<TimeRange>();
+
+    busyAllTimes.addAll(busyMandatoryTimes);
+    busyAllTimes.addAll(busyOptionalTimes);
+
+    ArrayList<TimeRange> availableAllTimes  = calculateAvailableTimes(busyAllTimes, request);
+
+    if (availableAllTimes.size() > 0) {
+      return availableAllTimes; 
+    }
+
+    if (request.getAttendees().size() > 0) {
+      return calculateAvailableTimes(busyMandatoryTimes, request);
+    }
+
+    return new ArrayList<TimeRange>();
   }
 
   /**
@@ -37,6 +53,27 @@ public final class FindMeetingQuery {
       Set<String> eventAttendees    = event.getAttendees();
 
       for (String attendee : request.getAttendees()) {
+        if (eventAttendees.contains(attendee)) {
+          busyTimes.add(eventTimeRange);
+          break;
+        }
+      }
+    }
+
+    return busyTimes;
+  }
+
+  /**
+   * Calculates times where optional attendee of a new event is busy due to another existing meeting.
+   **/
+  private ArrayList<TimeRange> calculateBusyOptionalTimes(Collection<Event> events, MeetingRequest request) {
+    ArrayList<TimeRange> busyTimes = new ArrayList<TimeRange>();
+
+    for (Event event : events) {
+      TimeRange eventTimeRange      = event.getWhen();
+      Set<String> eventAttendees    = event.getAttendees();
+
+      for (String attendee : request.getOptionalAttendees()) {
         if (eventAttendees.contains(attendee)) {
           busyTimes.add(eventTimeRange);
           break;
