@@ -7,6 +7,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.google.sps.utils.AuthCheck;
+import com.google.sps.utils.Language;
 
 
 /**
@@ -24,6 +25,7 @@ public class CommentDataServlet extends DataServlet {
   private static final String GET_COMMENT_URL               = "/comment-get";
   private static final String DELETE_COMMENT_URL            = "/comment-delete";
   private static final String ENTITY_KIND                   = "Comment";
+  private static final String[] LANGUAGE_CODES              = {"ar", "zh", "en", "hi", "id", "ja", "jv", "la", "ru"};
   private static HashMap<String, String> prevCursorMap;
 
   /**
@@ -67,10 +69,20 @@ public class CommentDataServlet extends DataServlet {
   /**
    * Function to post a new comment.
    * Attaches LDAP parameter to the comment to keep track of usernames.
+   *
+   * Also translates the new comment and stores the translations as part of the new entity.
+   * Translation is done here rather when the comment is fetched to prevent repeated translation API calls
+   * and have translation request be done faster.
    **/
   private void postComment(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    HashMap<String,String> extraParameters = new HashMap<String, String>();
+    HashMap<String,String> extraParameters  = new HashMap<String, String>();
+    String commentText                      = request.getParameter(COMMENT_TEXT_PARAMETER);
+
     extraParameters.put(USER_LDAP_PARAMETER, AuthCheck.getLdap());
+
+    for (String code : LANGUAGE_CODES) {
+      extraParameters.put(code, Language.translate(commentText, code));
+    }
 
     doPost(request, response, ENTITY_KIND, extraParameters);
   }
@@ -91,15 +103,8 @@ public class CommentDataServlet extends DataServlet {
   private void getComment(HttpServletRequest request, HttpServletResponse response) throws IOException {
     int commentsNumber  = parseIntParameter(request, COMMENT_NUMBER_PARAMETER);
     commentsNumber      = Math.max(commentsNumber, MIN_COMMENTS_NUMBER);
-    String languageCode = request.getParameter(LANGUAGE_CODE_PARAMETER);
 
-    HashMap<String, String> translationMap = null;
-    if (languageCode != null && !languageCode.equals(UNDEFINED_STRING)) {
-      translationMap = new HashMap<String, String>();
-      translationMap.put(COMMENT_TEXT_PARAMETER, languageCode);
-    }
-
-    doGet(request, response, ENTITY_KIND, ENTITY_TIMESTAMP_PARAMETER, commentsNumber, prevCursorMap, translationMap);
+    doGet(request, response, ENTITY_KIND, ENTITY_TIMESTAMP_PARAMETER, commentsNumber, prevCursorMap);
   }
 
   /**
