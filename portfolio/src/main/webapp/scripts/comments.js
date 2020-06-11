@@ -13,6 +13,7 @@ const NEXT_COMMENT_ID           = 'next-comment';
 const PREV_COMMENT_ID           = 'prev-comment';
 const CURR_COMMENT_ID           = 'curr-comment';
 const COMMENT_LANGUAGE_ID       = 'comment-language';
+const UNDEFINED_STRING          = 'undefined';
 
 /**
  * Functions to run when page first loads.
@@ -71,6 +72,7 @@ async function updateCommentNav(currCursorString, prevCursorString, nextCursorSt
  * load comments on homepage and updates the navigation button.
  * The number of comments loaded depends of commentsNumber input. Will always load 5 at minimum.
  * Clears previously loaded comments when called multiple times (done by setting innerHTML = '').
+ * Load comments in the language requested. If no translation is requested, original comments are displayed.
  **/
 async function loadComments(cursorString) {
   const responseObject      = await getCommentResponse(cursorString);
@@ -81,12 +83,17 @@ async function loadComments(cursorString) {
 
   await updateCommentNav(cursorString, prevCursorString, nextCursorString, responseObject);
 
+  let commentsLanguage      = document.getElementById(COMMENT_LANGUAGE_ID).value;
+  if (commentsLanguage === UNDEFINED_STRING) {
+    commentsLanguage        = COMMENT_TEXT_ID;
+  }
+
   const commentSection      = document.getElementById(COMMENT_SECTION_ID);
   commentSection.innerHTML  = '';
 
   for (var i = 0; i < commentsObject.length; ++i) {
     let commentProperties   = commentsObject[i].propertyMap;
-    let commentText         = commentProperties[COMMENT_TEXT_ID];
+    let commentText         = commentProperties[commentsLanguage];
     let commentLdap         = commentProperties[COMMENT_LDAP_ID];
     let commentElement      = createCommentChild(commentLdap + ': ' + commentText);
     commentSection.prepend(commentElement);
@@ -95,14 +102,13 @@ async function loadComments(cursorString) {
 
 /**
  * Helper function to get response from GET_COMMENT_URL.
- * 'comments-number', 'cursor', and 'language' magic string is intentionally left as is.
+ * 'comments-number' and 'cursor' magic string is intentionally left as is.
  * This is because constants are taken literally when making objects.
  **/
 async function getCommentResponse(cursorString) {
   const commentsNumber      = document.getElementById(COMMENTS_NUMBER_ID).value;
-  const commentsLanguage    = document.getElementById(COMMENT_LANGUAGE_ID).value;
 
-  const parameters      = {'comments-number': commentsNumber, 'cursor': cursorString, 'language': commentsLanguage};
+  const parameters      = {'comments-number': commentsNumber, 'cursor': cursorString};
   const fetchUrl        = constructFetchQueryUrl(GET_COMMENT_URL, parameters);
 
   const responseJson    = await fetch(fetchUrl);
