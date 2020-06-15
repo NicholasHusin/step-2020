@@ -52,13 +52,11 @@ public final class FindMeetingQuery {
    * Calculates timeranges where at least one of the newAttendees will be busy due to another event in events.
    **/
   private ArrayList<TimeRange> calculateBusyTimes(Collection<Event> events, Collection<String> newAttendees) {
-    ArrayList<TimeRange> busyTimes = events
+    return events
       .stream()
       .filter(event -> !Collections.disjoint(event.getAttendees(), newAttendees))
       .map(event -> event.getWhen())
       .collect(Collectors.toCollection(ArrayList::new));
-
-    return busyTimes;
   }
 
   /**
