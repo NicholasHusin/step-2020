@@ -14,86 +14,62 @@
 
 package com.google.sps;
 
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
 import java.util.Collections;
 import java.util.Collection;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Set;
 
 public final class FindMeetingQuery {
   public Collection<TimeRange> query(Collection<Event> events, MeetingRequest request) {
-    ArrayList<TimeRange> busyMandatoryTimes = calculateBusyMandatoryTimes(events, request);
-    ArrayList<TimeRange> busyOptionalTimes  = calculateBusyOptionalTimes(events, request);
-    ArrayList<TimeRange> busyAllTimes       = new ArrayList<TimeRange>();
+    int minDuration                         = (int) request.getDuration();
 
+    ArrayList<TimeRange> busyMandatoryTimes = calculateBusyTimes(events, request.getAttendees());
+    ArrayList<TimeRange> busyOptionalTimes  = calculateBusyTimes(events, request.getOptionalAttendees());
+
+    ArrayList<TimeRange> busyAllTimes       = new ArrayList<TimeRange>();
     busyAllTimes.addAll(busyMandatoryTimes);
     busyAllTimes.addAll(busyOptionalTimes);
 
-    ArrayList<TimeRange> availableAllTimes  = calculateAvailableTimes(busyAllTimes, request);
+    ArrayList<TimeRange> availableAllTimes  = calculateAvailableTimes(busyAllTimes, minDuration);
 
     if (availableAllTimes.size() > 0) {
       return availableAllTimes; 
     }
 
     if (request.getAttendees().size() > 0) {
-      return calculateAvailableTimes(busyMandatoryTimes, request);
+      return calculateAvailableTimes(busyMandatoryTimes, minDuration);
     }
 
     return new ArrayList<TimeRange>();
   }
 
+
   /**
-   * Calculates times where mandatory attendee of a new event is busy due to another existing meeting.
+   * Calculates timeranges where at least one of the newAttendees will be busy due to another event in events.
    **/
-  private ArrayList<TimeRange> calculateBusyMandatoryTimes(Collection<Event> events, MeetingRequest request) {
-    ArrayList<TimeRange> busyTimes = new ArrayList<TimeRange>();
-
-    for (Event event : events) {
-      TimeRange eventTimeRange      = event.getWhen();
-      Set<String> eventAttendees    = event.getAttendees();
-
-      for (String attendee : request.getAttendees()) {
-        if (eventAttendees.contains(attendee)) {
-          busyTimes.add(eventTimeRange);
-          break;
-        }
-      }
-    }
+  private ArrayList<TimeRange> calculateBusyTimes(Collection<Event> events, Collection<String> newAttendees) {
+    ArrayList<TimeRange> busyTimes = events
+      .stream()
+      .filter(event -> !Collections.disjoint(event.getAttendees(), newAttendees))
+      .map(event -> event.getWhen())
+      .collect(Collectors.toCollection(ArrayList::new));
 
     return busyTimes;
   }
 
   /**
-   * Calculates times where optional attendee of a new event is busy due to another existing meeting.
+   * Calculates a list of available timeranges given a list of unavailable timeranges
+   * and a minimum duration of each available timerange.
    **/
-  private ArrayList<TimeRange> calculateBusyOptionalTimes(Collection<Event> events, MeetingRequest request) {
-    ArrayList<TimeRange> busyTimes = new ArrayList<TimeRange>();
-
-    for (Event event : events) {
-      TimeRange eventTimeRange      = event.getWhen();
-      Set<String> eventAttendees    = event.getAttendees();
-
-      for (String attendee : request.getOptionalAttendees()) {
-        if (eventAttendees.contains(attendee)) {
-          busyTimes.add(eventTimeRange);
-          break;
-        }
-      }
-    }
-
-    return busyTimes;
-  }
-
-  /**
-   * Calculates the available times for a given new meeting request and a list 
-   * of times in which at least one mandatory attendee is busy.
-   **/
-  private ArrayList<TimeRange> calculateAvailableTimes(ArrayList<TimeRange> busyTimes, MeetingRequest request) {
+  private ArrayList<TimeRange> calculateAvailableTimes(ArrayList<TimeRange> busyTimes, int minDuration) {
     ArrayList<TimeRange> availableTimes = new ArrayList<TimeRange>();
-    int minDuration                     = (int) request.getDuration();
 
     Collections.sort(busyTimes, TimeRange.ORDER_BY_START);
-    removeNestedEvents(busyTimes);
+    removeNestedTimeranges(busyTimes);
 
     if (busyTimes.size() == 0) {
       addIfPossible(availableTimes, TimeRange.START_OF_DAY, TimeRange.END_OF_DAY, minDuration, true);
@@ -115,9 +91,9 @@ public final class FindMeetingQuery {
   }
 
   /**
-   * Remove nested events from list of sorted events.
+   * Remove nested timeranges from list of sorted timeranges.
    **/
-  private void removeNestedEvents(ArrayList<TimeRange> times) {
+  private void removeNestedTimeranges(ArrayList<TimeRange> times) {
     Iterator<TimeRange> timesItr    = times.iterator();
     TimeRange prevTimeRange         = null;
 
@@ -133,9 +109,9 @@ public final class FindMeetingQuery {
   }
 
   /**
-   * Add an event to a list only when it fulfills the minimum criteria:
-   * - The new event start time is before its end time.
-   * - The new event is longer than the minimum duration required.
+   * Add a timerange to a list only when it fulfills the minimum criteria:
+   * - The new timerange's start time is before its end time.
+   * - The new timerange is longer than the minimum duration required.
    **/
   private void addIfPossible(ArrayList<TimeRange> times, int startTime, int endTime, int minDuration, boolean isInclusive) {
     if (startTime >= endTime || endTime - startTime < minDuration) {
