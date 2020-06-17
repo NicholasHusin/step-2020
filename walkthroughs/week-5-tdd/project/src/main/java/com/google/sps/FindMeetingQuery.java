@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import java.util.Collections;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -26,27 +27,64 @@ import java.util.Set;
 public final class FindMeetingQuery {
   public Collection<TimeRange> query(Collection<Event> events, MeetingRequest request) {
     int minDuration                         = (int) request.getDuration();
-
-    ArrayList<TimeRange> busyMandatoryTimes = calculateBusyTimes(events, request.getAttendees());
-    ArrayList<TimeRange> busyOptionalTimes  = calculateBusyTimes(events, request.getOptionalAttendees());
-
-    ArrayList<TimeRange> busyAllTimes       = new ArrayList<TimeRange>();
-    busyAllTimes.addAll(busyMandatoryTimes);
-    busyAllTimes.addAll(busyOptionalTimes);
-
-    ArrayList<TimeRange> availableAllTimes  = calculateAvailableTimes(busyAllTimes, minDuration);
-
-    if (availableAllTimes.size() > 0) {
-      return availableAllTimes; 
-    }
-
-    if (request.getAttendees().size() > 0) {
-      return calculateAvailableTimes(busyMandatoryTimes, minDuration);
-    }
-
-    return new ArrayList<TimeRange>();
+    return findBestTime(events, request.getAttendees(), request.getOptionalAttendees(), minDuration);
   }
 
+  private ArrayList<TimeRange> findBestTime(Collection<Event> events, Collection<String> mandatoryAttendees, 
+      Collection<String> optionalAttendees, int minDuration) {
+
+    HashMap<ArrayList<String>, ArrayList<TimeRange>> resultMemo     = new HashMap<>();
+    ArrayList<String> mandatoryAttendeesList                        = new ArrayList<>(mandatoryAttendees);
+    ArrayList<String> optionalAttendeesList                         = new ArrayList<>(optionalAttendees);
+
+    ArrayList<String> bestAttendees = addAsMuchAttendee(events, mandatoryAttendeesList, optionalAttendeesList, resultMemo, optionalAttendeesList.size() - 1, minDuration);
+
+    return resultMemo.get(bestAttendees);
+  }
+
+  private ArrayList<String> addAsMuchAttendee(Collection<Event> events, ArrayList<String> mandatoryAttendees, 
+      ArrayList<String> optionalAttendees, HashMap<ArrayList<String>, ArrayList<TimeRange>> resultMemo, 
+      int index, int minDuration) {
+
+    calculateMeetingTimeMemoize(events, mandatoryAttendees, optionalAttendees, resultMemo, minDuration);
+
+    if (index < 0) {
+        return optionalAttendees;
+    }
+
+
+    if (!resultMemo.get(optionalAttendees).isEmpty()) {
+      return optionalAttendees;
+    }
+
+    ArrayList<String> firstRecurseAttendees     = new ArrayList<>(optionalAttendees); 
+    ArrayList<String> secondRecurseAttendees    = new ArrayList<>(optionalAttendees); 
+    secondRecurseAttendees.remove(index);
+
+    firstRecurseAttendees     = addAsMuchAttendee(events, mandatoryAttendees, firstRecurseAttendees, resultMemo, index - 1, minDuration);
+    secondRecurseAttendees    = addAsMuchAttendee(events, mandatoryAttendees, secondRecurseAttendees, resultMemo, index - 1, minDuration);
+
+    if (!resultMemo.get(firstRecurseAttendees).isEmpty() && firstRecurseAttendees.size() > secondRecurseAttendees.size()) {
+      return firstRecurseAttendees;
+    }
+
+    return secondRecurseAttendees;
+  }
+
+  private void calculateMeetingTimeMemoize(Collection<Event> events, ArrayList<String> mandatoryAttendees, 
+      ArrayList<String> optionalAttendees, HashMap<ArrayList<String>, ArrayList<TimeRange>> resultMemo, int minDuration) {
+
+    if (resultMemo.containsKey(optionalAttendees)) {
+      return;
+    }
+
+    ArrayList<String> attendees = new ArrayList<>();
+    attendees.addAll(mandatoryAttendees);
+    attendees.addAll(optionalAttendees);
+
+    ArrayList<TimeRange> meetingTimes = calculateAvailableTimes(calculateBusyTimes(events, attendees), minDuration);
+    resultMemo.put(optionalAttendees, meetingTimes);
+  }
 
   /**
    * Calculates timeranges where at least one of the newAttendees will be busy due to another event in events.
