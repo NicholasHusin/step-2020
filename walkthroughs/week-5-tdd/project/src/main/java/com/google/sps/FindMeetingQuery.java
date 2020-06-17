@@ -25,45 +25,80 @@ import java.util.Iterator;
 import java.util.Set;
 
 public final class FindMeetingQuery {
+  /**
+   * Function to find the best meeting time, defined as:
+   * - Times where all mandatory attendees are available.
+   * - Times where there could be as much optional attendees as possible.
+   *
+   * Note that there might be cases where there could be the same amount of optional attendees available.
+   * For example, optional attendee A and B can make it to 8:30 but C and D can make it to 9:30
+   * In this case, priority is given to optional attendees that are inputted first.
+   * Ex: If A B C D are inpputed in that order, the priority is A > B > C > D.
+   *
+   * Prepares HashMap to be used for memoization in addAsMuchAttendee
+   * and does all needed type conversions.
+   **/
   public Collection<TimeRange> query(Collection<Event> events, MeetingRequest request) {
+    HashMap<ArrayList<String>, ArrayList<TimeRange>> resultMemo = new HashMap<>();
+
     int minDuration                         = (int) request.getDuration();
-    return findBestTime(events, request.getAttendees(), request.getOptionalAttendees(), minDuration);
-  }
+    ArrayList<String> mandatoryAttendees    = new ArrayList<>(request.getAttendees());
+    ArrayList<String> optionalAttendees     = new ArrayList<>(request.getOptionalAttendees());
 
-  private ArrayList<TimeRange> findBestTime(Collection<Event> events, Collection<String> mandatoryAttendees, 
-      Collection<String> optionalAttendees, int minDuration) {
-
-    HashMap<ArrayList<String>, ArrayList<TimeRange>> resultMemo     = new HashMap<>();
-    ArrayList<String> mandatoryAttendeesList                        = new ArrayList<>(mandatoryAttendees);
-    ArrayList<String> optionalAttendeesList                         = new ArrayList<>(optionalAttendees);
-
-    ArrayList<String> bestAttendees = addAsMuchAttendee(events, mandatoryAttendeesList, optionalAttendeesList, resultMemo, optionalAttendeesList.size() - 1, minDuration);
+    ArrayList<String> bestAttendees = addAsMuchAttendee(events, mandatoryAttendees, optionalAttendees, 
+                                                        resultMemo, optionalAttendees.size() - 1, minDuration);
 
     return resultMemo.get(bestAttendees);
   }
 
-  private ArrayList<String> addAsMuchAttendee(Collection<Event> events, ArrayList<String> mandatoryAttendees, 
-      ArrayList<String> optionalAttendees, HashMap<ArrayList<String>, ArrayList<TimeRange>> resultMemo, 
-      int index, int minDuration) {
+  /**
+   * Recursive function that returns the best list of attendee possible, defined as attendees
+   * such that the meeting times are:
+   * - Times where all mandatory attendees are available.
+   * - Times where there could be as much optional attendees as possible.
+   *
+   * Gives priority to optional attendees that are inputted earlier.
+   * 
+   * How this function works:
+   * 1. Start with the assumption that all optional attendees should be included 
+   *    and index pointing to the last attendee on the list.
+   * 2. If there's a time where all mandatory and all optional attendees could meet, return it.
+   *    This means that we have found the best case possible in the current branch and can avoid
+   *    wasted computation. We also memoize the result at this step.
+   * 3. If not, branch the recursion into two cases:
+   *    - One where we remove the attendee pointed by the index and move the index backwards by 1.
+   *    - One where we don't remove the attendee and only move the index.
+   * 4. The two branches will keep on recursing until they hit the base case and will return
+   *    the best possible list in their respective branches.
+   * 5. We compare the result from the two branches and return the best one upwards.
+   **/
+  private ArrayList<String> addAsMuchAttendee(Collection<Event> events, ArrayList<String> mandatoryAttendees,
+                                                ArrayList<String> optionalAttendees, HashMap<ArrayList<String>, 
+                                                ArrayList<TimeRange>> resultMemo, int index, int minDuration) {
 
+    // Calculates and memoizes the possible times for a meeting given the current attendees.
     calculateMeetingTimeMemoize(events, mandatoryAttendees, optionalAttendees, resultMemo, minDuration);
 
-    if (index < 0) {
-        return optionalAttendees;
-    }
-
-
-    if (!resultMemo.get(optionalAttendees).isEmpty()) {
+    // Base case: No more attendees to modify.
+    if (index < 0)
       return optionalAttendees;
-    }
 
+    // Base case: Found the best case scenario in current recursion branch.
+    if (!resultMemo.get(optionalAttendees).isEmpty())
+      return optionalAttendees;
+
+
+    // Set up variable for next recursion: 
+    // One where the attendee in index is removed and one where it's not.
     ArrayList<String> firstRecurseAttendees     = new ArrayList<>(optionalAttendees); 
     ArrayList<String> secondRecurseAttendees    = new ArrayList<>(optionalAttendees); 
     secondRecurseAttendees.remove(index);
 
+    // Does the recursion and updates the two variables to point at the best possible lists in both branches.
     firstRecurseAttendees     = addAsMuchAttendee(events, mandatoryAttendees, firstRecurseAttendees, resultMemo, index - 1, minDuration);
     secondRecurseAttendees    = addAsMuchAttendee(events, mandatoryAttendees, secondRecurseAttendees, resultMemo, index - 1, minDuration);
 
+    // Returns the best list of attendees upward.
     if (!resultMemo.get(firstRecurseAttendees).isEmpty() && firstRecurseAttendees.size() > secondRecurseAttendees.size()) {
       return firstRecurseAttendees;
     }
@@ -71,8 +106,16 @@ public final class FindMeetingQuery {
     return secondRecurseAttendees;
   }
 
+  /**
+   * Helper function that calculates the possible meeting times given a list of attendees.
+   * The result is stored into the HashMap to prevent repeated work in addAsMuchAttendee when recursing.
+   *
+   * Uses optional attendees as the key. 
+   * Uses the possible time for the mandatory and optional attendees to meet as the result.
+   **/
   private void calculateMeetingTimeMemoize(Collection<Event> events, ArrayList<String> mandatoryAttendees, 
-      ArrayList<String> optionalAttendees, HashMap<ArrayList<String>, ArrayList<TimeRange>> resultMemo, int minDuration) {
+                                            ArrayList<String> optionalAttendees, HashMap<ArrayList<String>, 
+                                            ArrayList<TimeRange>> resultMemo, int minDuration) {
 
     if (resultMemo.containsKey(optionalAttendees)) {
       return;
@@ -149,7 +192,9 @@ public final class FindMeetingQuery {
    * - The new timerange's start time is before its end time.
    * - The new timerange is longer than the minimum duration required.
    **/
-  private void addIfPossible(ArrayList<TimeRange> times, int startTime, int endTime, int minDuration, boolean isInclusive) {
+  private void addIfPossible(ArrayList<TimeRange> times, int startTime, int endTime, 
+                                int minDuration, boolean isInclusive) {
+
     if (startTime >= endTime || endTime - startTime < minDuration) {
       return;
     }
