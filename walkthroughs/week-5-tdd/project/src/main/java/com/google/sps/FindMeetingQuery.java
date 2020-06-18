@@ -71,6 +71,11 @@ public final class FindMeetingQuery {
    * 4. The two branches will keep on recursing until they hit the base case and will return
    *    the best possible list in their respective branches.
    * 5. We compare the result from the two branches and return the best one upwards.
+   *
+   * In other words, this function generates the power set of attendees starting from the one
+   * with the most elements. We start with the most elements so we can stop early if the best case
+   * scenario is found early (For example, this function only runs once if there's a time slot
+   * where all attendees can attend).
    **/
   private ArrayList<String> addAsMuchAttendee(Collection<Event> events, ArrayList<String> mandatoryAttendees,
                                                 ArrayList<String> optionalAttendees, HashMap<ArrayList<String>, 
@@ -90,20 +95,20 @@ public final class FindMeetingQuery {
 
     // Set up variable for next recursion: 
     // One where the attendee in index is removed and one where it's not.
-    ArrayList<String> firstRecurseAttendees     = new ArrayList<>(optionalAttendees); 
-    ArrayList<String> secondRecurseAttendees    = new ArrayList<>(optionalAttendees); 
-    secondRecurseAttendees.remove(index);
+    ArrayList<String> withCurrentAttendee       = new ArrayList<>(optionalAttendees); 
+    ArrayList<String> withoutCurrentAttendee    = new ArrayList<>(optionalAttendees); 
+    withoutCurrentAttendee.remove(index);
 
     // Does the recursion and updates the two variables to point at the best possible lists in both branches.
-    firstRecurseAttendees     = addAsMuchAttendee(events, mandatoryAttendees, firstRecurseAttendees, resultMemo, index - 1, minDuration);
-    secondRecurseAttendees    = addAsMuchAttendee(events, mandatoryAttendees, secondRecurseAttendees, resultMemo, index - 1, minDuration);
+    withCurrentAttendee     = addAsMuchAttendee(events, mandatoryAttendees, withCurrentAttendee, resultMemo, index - 1, minDuration);
+    withoutCurrentAttendee  = addAsMuchAttendee(events, mandatoryAttendees, withoutCurrentAttendee, resultMemo, index - 1, minDuration);
 
     // Returns the best list of attendees upward.
-    if (!resultMemo.get(firstRecurseAttendees).isEmpty() && firstRecurseAttendees.size() > secondRecurseAttendees.size()) {
-      return firstRecurseAttendees;
+    if (!resultMemo.get(withCurrentAttendee).isEmpty() && withCurrentAttendee.size() > withoutCurrentAttendee.size()) {
+      return withCurrentAttendee;
     }
 
-    return secondRecurseAttendees;
+    return withoutCurrentAttendee;
   }
 
   /**
